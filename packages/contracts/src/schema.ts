@@ -81,6 +81,88 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/system/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the installation's status
+         * @description Version, database schema, reminder worker, and which optional parts are configured.
+         */
+        get: operations["get_system_status_api_v1_system_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the update notice
+         * @description With update checks on, asks GitHub when the last answer is a day old (an hour after a
+         *     failure). A failed check is reported in the result, not as an error.
+         */
+        get: operations["get_update_status_api_v1_system_update_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/update/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check for updates now
+         * @description Asks GitHub now, unless it was asked in the last minute. Does nothing while update
+         *     checks are off.
+         */
+        post: operations["check_for_updates_api_v1_system_update_check_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change the server-wide settings
+         * @description Turning update checks on asks GitHub right away; GitHub sees the server's address.
+         */
+        put: operations["update_system_settings_api_v1_system_settings_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/config": {
         parameters: {
             query?: never;
@@ -20471,6 +20553,90 @@ export interface components {
             /** Supabase Publishable Key */
             supabase_publishable_key: string;
         };
+        /** SystemDatabaseStatus */
+        SystemDatabaseStatus: {
+            /**
+             * Status
+             * @description `outdated` when the schema isn't at this version's revision: run `pnpm db:migrate`.
+             * @enum {string}
+             */
+            status: "ok" | "outdated";
+            /**
+             * Revision
+             * @description The database's schema revision.
+             */
+            revision: string | null;
+            /**
+             * Expected Revision
+             * @description The revision this version expects.
+             */
+            expected_revision: string | null;
+        };
+        /**
+         * SystemFeatures
+         * @description Optional parts the server's configuration turns on. Never secrets or addresses.
+         */
+        SystemFeatures: {
+            /** Ai */
+            ai: boolean;
+            /** Agent */
+            agent: boolean;
+            /** Web Push */
+            web_push: boolean;
+            /** Google */
+            google: boolean;
+            /** Microsoft */
+            microsoft: boolean;
+            /** Online Maps */
+            online_maps: boolean;
+        };
+        /** SystemSettingsRequest */
+        SystemSettingsRequest: {
+            /**
+             * Update Check Enabled
+             * @description Ask GitHub for the latest release about once a day. GitHub sees the server's address; nothing else is sent.
+             */
+            update_check_enabled: boolean;
+        };
+        /**
+         * SystemStatusResponse
+         * @description Health of this installation, for whoever runs it. Reveals no paths or secrets.
+         */
+        SystemStatusResponse: {
+            /**
+             * Version
+             * @description Version of the running API.
+             */
+            version: string;
+            /**
+             * Storage Mode
+             * @enum {string}
+             */
+            storage_mode: "local" | "cloud";
+            /**
+             * Started At
+             * Format: date-time
+             * @description When the API process started.
+             */
+            started_at: string;
+            database: components["schemas"]["SystemDatabaseStatus"];
+            worker: components["schemas"]["SystemWorkerStatus"];
+            features: components["schemas"]["SystemFeatures"];
+        };
+        /** SystemWorkerStatus */
+        SystemWorkerStatus: {
+            /**
+             * Runs In Api
+             * @description Whether the API process runs the worker; otherwise `orbit-worker` must.
+             */
+            runs_in_api: boolean;
+            /**
+             * Status
+             * @description `behind` when reminders that were due minutes ago are still waiting, which usually means no worker is running.
+             * @enum {string}
+             */
+            status: "ok" | "behind";
+        };
         /** TableResultResponse */
         TableResultResponse: {
             /** Table */
@@ -22006,6 +22172,48 @@ export interface components {
             notes?: string | null;
         };
         /**
+         * UpdateStatusResponse
+         * @description Whether a newer Orbit release is out. Empty until update checks are turned on.
+         */
+        UpdateStatusResponse: {
+            /**
+             * Enabled
+             * @description Whether this server checks for new releases.
+             */
+            enabled: boolean;
+            /**
+             * Repository
+             * @description The GitHub repository whose releases it follows.
+             */
+            repository: string;
+            /** Current Version */
+            current_version: string;
+            /**
+             * Latest Version
+             * @description The newest release found, e.g. `1.2.0`.
+             */
+            latest_version: string | null;
+            /** Latest Published At */
+            latest_published_at: string | null;
+            /** Update Available */
+            update_available: boolean;
+            /**
+             * Release Url
+             * @description The newest release's page on GitHub.
+             */
+            release_url: string | null;
+            /**
+             * Checked At
+             * @description When the server last asked.
+             */
+            checked_at: string | null;
+            /**
+             * Check Failed
+             * @description Whether the last attempt failed; the release shown is from an earlier one.
+             */
+            check_failed: boolean;
+        };
+        /**
          * UpdateTaskListRequest
          * @description Rename or recolor a list. Omitted fields keep their values.
          */
@@ -22809,6 +23017,127 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    get_system_status_api_v1_system_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SystemStatusResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_update_status_api_v1_system_update_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdateStatusResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    check_for_updates_api_v1_system_update_check_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdateStatusResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update_system_settings_api_v1_system_settings_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SystemSettingsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdateStatusResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };

@@ -21,6 +21,7 @@ from orbit_api.auth.passwords import Argon2PasswordHasher
 from orbit_api.auth.supabase import SupabaseTokenVerifier
 from orbit_api.auth.webauthn import WebAuthnDevices
 from orbit_api.config import Settings, get_settings
+from orbit_api.db.columns import utc_now
 from orbit_api.db.database import open_database
 from orbit_api.observability import RequestContextMiddleware
 from orbit_api.providers.ai.registry import HttpProviderFactory
@@ -29,6 +30,7 @@ from orbit_api.providers.integrations.registry import HttpConnectorRegistry
 from orbit_api.providers.media.tmdb import TmdbClient
 from orbit_api.providers.prices.feed import HttpPriceFeed
 from orbit_api.providers.push.web_push import WebPushSender
+from orbit_api.providers.releases.github import GitHubReleaseFeed
 from orbit_api.providers.voice.registry import HttpAudioProviderFactory
 from orbit_api.providers.web.link_preview import LinkPreviewClient
 from orbit_api.scheduler.worker import (
@@ -75,6 +77,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         prices = app.state.price_feed
         tmdb = app.state.tmdb
         geocoder = app.state.geocoder
+        releases = app.state.release_feed
+        app.state.started_at = utc_now()
         stop = asyncio.Event()
         worker = None
         if settings.scheduler_embedded:
@@ -103,6 +107,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             await prices.aclose()
             await tmdb.aclose()
             await geocoder.aclose()
+            await releases.aclose()
             await database.dispose()
 
     app = FastAPI(
@@ -135,6 +140,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # Link previews for Saved, only for workspaces that turn them on. Opens a connection per
     # request, so there's nothing to close.
     app.state.link_previews = LinkPreviewClient()
+    # Update notices, only once someone turns them on in Settings → System.
+    app.state.release_feed = GitHubReleaseFeed()
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,

@@ -289,6 +289,31 @@ one aggregate, always owner-scoped) → ORM models (`db/models/<feature>.py`) �
 - **Linking local and cloud identities**: same email, unrelated accounts.
 - **Encryption at rest beyond the OS**, a desktop wrapper, a bundled local DB server.
 
+## System status and update notices
+
+Settings → System is for whoever runs the server. Both endpoints are server-wide (signed-in, no
+workspace) and reveal no paths, secrets, or other people's data.
+
+- `GET /api/v1/system/status`: version, when the API started, storage mode, the database's
+  schema revision against the one this version expects, whether the reminder worker runs in the
+  API or as `orbit-worker` and whether it's `behind` (a pending reminder overdue by
+  `max(5 min, 4 × ORBIT_SCHEDULER_POLL_SECONDS)`, a yes/no across the server, no counts or
+  times), and which optional features the configuration turns on.
+- `GET /api/v1/system/update`, `POST …/update/check`, `PUT /api/v1/system/settings`: update
+  notices, **off until someone turns them on**. Then the server (never the browser) asks
+  GitHub's public releases API for `ORBIT_UPDATE_REPOSITORY`'s latest release
+  (`providers/releases/github.py`, no token): at most once a day, an hour after a failure, and
+  once a minute when someone clicks Check now. Only the repository name is sent; GitHub sees the
+  server's address. A failed check is reported in the response, never as an error, and keeps
+  the release found earlier. Versions compare as `major.minor.patch`; drafts and pre-releases
+  are never offered.
+- One row in `system_settings` (`id = 1`, no row means off) holds the switch and the last
+  result, so it's shared by every API process and survives restarts. It's excluded from
+  backups. There are no admin accounts, so anyone signed in can change it; it only controls
+  that one outgoing request.
+- The web caches the notice for an hour; the settings menu badges the System row with "Update"
+  when a newer release is out.
+
 ## Identity and authorization
 
 ### Identity model

@@ -121,6 +121,12 @@ Successful health probes aren't logged. Set `ORBIT_LOG_FORMAT=json` for one JSON
 Worker activity (reminders, indexing, integration sync, backups, agent runs) is logged by the
 same process; `docker compose exec api orbit-worker status` counts reminder deliveries by status.
 
+Signed in, **Settings → System** shows the running version, whether the database schema matches
+it, whether the reminder worker is keeping up, and which optional features are configured. Turn
+on **Check for updates** there to be told when a new release is out: the server asks GitHub's
+releases API about once a day (GitHub sees the server's address; nothing else is sent). Set
+`ORBIT_UPDATE_REPOSITORY` to follow a fork instead.
+
 ## Integrations
 
 To offer Google or Microsoft accounts, create OAuth apps as in [integrations.md](integrations.md)

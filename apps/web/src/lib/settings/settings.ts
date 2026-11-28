@@ -1,4 +1,5 @@
 import {
+  Activity,
   Archive,
   AudioLines,
   Bell,
@@ -174,6 +175,15 @@ export const settingsPanels: readonly SettingsPanel[] = [
     tone: "slate",
     section: "data",
     keywords: ["database", "sqlite", "supabase", "location"],
+  },
+  {
+    slug: "system",
+    title: "System",
+    description: "Version, updates, and server health.",
+    icon: Activity,
+    tone: "teal",
+    section: "data",
+    keywords: ["update", "version", "release", "health", "status", "worker", "migrate"],
   },
 ];
 

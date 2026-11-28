@@ -5,8 +5,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useId, useState } from "react";
 
+import { Badge } from "@/components/ui/badge";
 import { IconChip } from "@/components/ui/icon-chip";
 import { Input } from "@/components/ui/input";
+import { useUpdateAvailable } from "@/hooks/use-system";
 import {
   matchesSettingsQuery,
   settingsHref,
@@ -38,6 +40,7 @@ export function SettingsMenu({ activeFallback, variant = "list" }: SettingsMenuP
     pathname === "/settings" ? activeFallback : pathname.slice("/settings/".length);
   const [query, setQuery] = useState("");
   const idPrefix = useId();
+  const updateAvailable = useUpdateAvailable();
 
   const groups = settingsSections
     .map((section) => ({
@@ -102,9 +105,17 @@ export function SettingsMenu({ activeFallback, variant = "list" }: SettingsMenuP
                   {group.panels.map((panel) => (
                     <li key={panel.slug}>
                       {rail ? (
-                        <RailRow panel={panel} active={activeSlug === panel.slug} />
+                        <RailRow
+                          panel={panel}
+                          active={activeSlug === panel.slug}
+                          badge={panel.slug === "system" && updateAvailable ? "Update" : null}
+                        />
                       ) : (
-                        <ListRow panel={panel} active={activeSlug === panel.slug} />
+                        <ListRow
+                          panel={panel}
+                          active={activeSlug === panel.slug}
+                          badge={panel.slug === "system" && updateAvailable ? "Update" : null}
+                        />
                       )}
                     </li>
                   ))}
@@ -118,10 +129,15 @@ export function SettingsMenu({ activeFallback, variant = "list" }: SettingsMenuP
   );
 }
 
-type RowProps = { panel: SettingsPanel; active: boolean };
+type RowProps = {
+  panel: SettingsPanel;
+  active: boolean;
+  /** A short notice on the row, such as "Update" when a new release is out. */
+  badge: string | null;
+};
 
 /** A compact rail row: the open panel's row lifts onto a card with a brand marker. */
-function RailRow({ panel, active }: RowProps) {
+function RailRow({ panel, active, badge }: RowProps) {
   return (
     <Link
       href={settingsHref(panel.slug)}
@@ -148,12 +164,13 @@ function RailRow({ panel, active }: RowProps) {
         )}
       />
       <span className="min-w-0 flex-1 truncate">{panel.title}</span>
+      {badge ? <Badge variant="brand">{badge}</Badge> : null}
     </Link>
   );
 }
 
 /** A small-screen row: icon, title, and one line on what the page holds. */
-function ListRow({ panel, active }: RowProps) {
+function ListRow({ panel, active, badge }: RowProps) {
   return (
     <Link
       href={settingsHref(panel.slug)}
@@ -168,6 +185,7 @@ function ListRow({ panel, active }: RowProps) {
         <span className="truncate text-sm font-medium">{panel.title}</span>
         <span className="truncate text-xs text-muted-foreground">{panel.description}</span>
       </span>
+      {badge ? <Badge variant="brand">{badge}</Badge> : null}
       <ChevronRight
         className={cn("size-4 shrink-0 text-muted-foreground", active && "text-brand")}
         aria-hidden="true"

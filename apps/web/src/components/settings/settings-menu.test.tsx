@@ -14,11 +14,24 @@ vi.mock("next/navigation", () => ({
   usePathname: () => pathname.current,
 }));
 
+const upToDate = {
+  enabled: true,
+  repository: "nithiin7/orbit-assistant",
+  current_version: "1.0.0",
+  latest_version: "1.0.0",
+  latest_published_at: null,
+  update_available: false,
+  release_url: null,
+  checked_at: "2026-11-28T09:00:00Z",
+  check_failed: false,
+};
+
 const signedIn = {
   "GET /api/v1/auth/config": json({ provider: "local", registration_open: false }),
   "GET /api/v1/me": json(ada),
   "GET /api/v1/me/avatar": status(204),
   "GET /api/v1/workspaces": json({ workspaces: [personal] }),
+  "GET /api/v1/system/update": json(upToDate),
 };
 
 afterEach(() => {
@@ -90,5 +103,20 @@ describe("SettingsMenu", () => {
     await renderSignedIn(<SettingsMenu activeFallback="account" />);
 
     expect(screen.getByRole("link", { name: /^Account/ })).toHaveAttribute("aria-current", "page");
+  });
+
+  it("badges the System row when a newer release is out", async () => {
+    mockApi({
+      ...signedIn,
+      "GET /api/v1/system/update": json({
+        ...upToDate,
+        latest_version: "1.1.0",
+        update_available: true,
+      }),
+    });
+    await renderSignedIn(<SettingsMenu />);
+    expect(
+      await within(screen.getByRole("link", { name: /^System/ })).findByText("Update"),
+    ).toBeInTheDocument();
   });
 });

@@ -105,6 +105,146 @@
         }
       }
     },
+    "/api/v1/system/status": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Get the installation's status",
+        "description": "Version, database schema, reminder worker, and which optional parts are configured.",
+        "operationId": "get_system_status_api_v1_system_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemStatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/system/update": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Get the update notice",
+        "description": "With update checks on, asks GitHub when the last answer is a day old (an hour after a\nfailure). A failed check is reported in the result, not as an error.",
+        "operationId": "get_update_status_api_v1_system_update_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateStatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/system/update/check": {
+      "post": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Check for updates now",
+        "description": "Asks GitHub now, unless it was asked in the last minute. Does nothing while update\nchecks are off.",
+        "operationId": "check_for_updates_api_v1_system_update_check_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateStatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/system/settings": {
+      "put": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Change the server-wide settings",
+        "description": "Turning update checks on asks GitHub right away; GitHub sees the server's address.",
+        "operationId": "update_system_settings_api_v1_system_settings_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SystemSettingsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateStatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/auth/config": {
       "get": {
         "tags": [
@@ -177,6 +317,9 @@
           "409": {
             "description": "An account with this email already exists."
           },
+          "429": {
+            "description": "Too many attempts. Wait for `Retry-After` seconds."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -186,9 +329,6 @@
                 }
               }
             }
-          },
-          "429": {
-            "description": "Too many attempts. Wait for `Retry-After` seconds."
           }
         }
       }
@@ -225,6 +365,9 @@
           "401": {
             "description": "The email or password is incorrect."
           },
+          "429": {
+            "description": "Too many attempts. Wait for `Retry-After` seconds."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -234,9 +377,6 @@
                 }
               }
             }
-          },
-          "429": {
-            "description": "Too many attempts. Wait for `Retry-After` seconds."
           }
         }
       }
@@ -269,6 +409,9 @@
           "403": {
             "description": "The current password is incorrect."
           },
+          "429": {
+            "description": "Too many attempts. Wait for `Retry-After` seconds."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -278,9 +421,6 @@
                 }
               }
             }
-          },
-          "429": {
-            "description": "Too many attempts. Wait for `Retry-After` seconds."
           }
         },
         "security": [
@@ -421,11 +561,11 @@
               }
             }
           },
-          "204": {
-            "description": "No photo is set."
-          },
           "401": {
             "description": "Not signed in."
+          },
+          "204": {
+            "description": "No photo is set."
           }
         },
         "security": [
@@ -536,11 +676,11 @@
               }
             }
           },
-          "204": {
-            "description": "No cover photo is set."
-          },
           "401": {
             "description": "Not signed in."
+          },
+          "204": {
+            "description": "No cover photo is set."
           }
         },
         "security": [
@@ -639,11 +779,11 @@
               }
             }
           },
-          "204": {
-            "description": "No layout is saved; show the default dashboard."
-          },
           "401": {
             "description": "Not signed in."
+          },
+          "204": {
+            "description": "No layout is saved; show the default dashboard."
           }
         },
         "security": [
@@ -783,14 +923,14 @@
           "401": {
             "description": "Not signed in, or signed out by app lock."
           },
+          "423": {
+            "description": "This session is locked."
+          },
           "409": {
             "description": "App lock is off."
           },
           "422": {
             "description": "The PIN is wrong or missing; the detail says how many tries are left."
-          },
-          "423": {
-            "description": "This session is locked."
           }
         },
         "security": [
@@ -831,6 +971,9 @@
           "401": {
             "description": "Not signed in, or signed out by app lock."
           },
+          "423": {
+            "description": "This session is locked."
+          },
           "409": {
             "description": "App lock is off."
           },
@@ -843,9 +986,6 @@
                 }
               }
             }
-          },
-          "423": {
-            "description": "This session is locked."
           }
         },
         "security": [
@@ -886,14 +1026,14 @@
           "401": {
             "description": "Not signed in, or signed out by app lock."
           },
+          "423": {
+            "description": "This session is locked."
+          },
           "409": {
             "description": "App lock is off."
           },
           "422": {
             "description": "The PIN is wrong or missing; the detail says how many tries are left."
-          },
-          "423": {
-            "description": "This session is locked."
           }
         },
         "security": [
@@ -991,14 +1131,14 @@
           "401": {
             "description": "Not signed in, or signed out by app lock."
           },
+          "423": {
+            "description": "This session is locked."
+          },
           "409": {
             "description": "App lock is off."
           },
           "422": {
             "description": "The PIN is wrong or missing; the detail says how many tries are left."
-          },
-          "423": {
-            "description": "This session is locked."
           }
         },
         "security": [
@@ -1029,14 +1169,14 @@
           "401": {
             "description": "Not signed in, or signed out by app lock."
           },
+          "423": {
+            "description": "This session is locked."
+          },
           "409": {
             "description": "App lock is off, or 10 devices were added already."
           },
           "422": {
             "description": "The device's response didn't verify, or Orbit's address is unknown."
-          },
-          "423": {
-            "description": "This session is locked."
           }
         },
         "security": [
@@ -1077,14 +1217,14 @@
           "401": {
             "description": "Not signed in, or signed out by app lock."
           },
+          "423": {
+            "description": "This session is locked."
+          },
           "409": {
             "description": "App lock is off."
           },
           "422": {
             "description": "The device's response didn't verify, or Orbit's address is unknown."
-          },
-          "423": {
-            "description": "This session is locked."
           }
         },
         "security": [
@@ -1132,6 +1272,9 @@
           "401": {
             "description": "Not signed in, or signed out by app lock."
           },
+          "423": {
+            "description": "This session is locked."
+          },
           "404": {
             "description": "Device not found."
           },
@@ -1144,9 +1287,6 @@
                 }
               }
             }
-          },
-          "423": {
-            "description": "This session is locked."
           }
         }
       }
@@ -1172,8 +1312,8 @@
           "401": {
             "description": "Not signed in, or signed out by app lock."
           },
-          "404": {
-            "description": "No device can unlock Orbit at this address."
+          "423": {
+            "description": "This session is locked."
           },
           "409": {
             "description": "App lock is off."
@@ -1181,8 +1321,8 @@
           "422": {
             "description": "The device's response didn't verify, or Orbit's address is unknown."
           },
-          "423": {
-            "description": "This session is locked."
+          "404": {
+            "description": "No device can unlock Orbit at this address."
           }
         },
         "security": [
@@ -1223,14 +1363,14 @@
           "401": {
             "description": "Not signed in, or signed out by app lock."
           },
+          "423": {
+            "description": "This session is locked."
+          },
           "409": {
             "description": "App lock is off."
           },
           "422": {
             "description": "The device's response didn't verify, or Orbit's address is unknown."
-          },
-          "423": {
-            "description": "This session is locked."
           }
         },
         "security": [
@@ -2011,6 +2151,9 @@
           "409": {
             "description": "A backup of this workspace is already running."
           },
+          "500": {
+            "description": "The backup failed; the failure is recorded in the history."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -2020,9 +2163,6 @@
                 }
               }
             }
-          },
-          "500": {
-            "description": "The backup failed; the failure is recorded in the history."
           }
         }
       }
@@ -2062,6 +2202,9 @@
           "404": {
             "description": "Not available in cloud mode or in production."
           },
+          "503": {
+            "description": "No file manager could be opened on the API's machine."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -2071,9 +2214,6 @@
                 }
               }
             }
-          },
-          "503": {
-            "description": "No file manager could be opened on the API's machine."
           }
         }
       }
@@ -5356,6 +5496,9 @@
           "409": {
             "description": "Title lookup is off for this workspace or server."
           },
+          "503": {
+            "description": "TMDB couldn't be reached."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -5365,9 +5508,6 @@
                 }
               }
             }
-          },
-          "503": {
-            "description": "TMDB couldn't be reached."
           }
         }
       }
@@ -5417,6 +5557,9 @@
           "409": {
             "description": "Title lookup is off for this workspace or server."
           },
+          "503": {
+            "description": "TMDB couldn't be reached."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -5426,9 +5569,6 @@
                 }
               }
             }
-          },
-          "503": {
-            "description": "TMDB couldn't be reached."
           }
         }
       }
@@ -5487,6 +5627,9 @@
           "409": {
             "description": "Title lookup is off for this workspace or server."
           },
+          "503": {
+            "description": "TMDB couldn't be reached."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -5496,9 +5639,6 @@
                 }
               }
             }
-          },
-          "503": {
-            "description": "TMDB couldn't be reached."
           }
         }
       }
@@ -5610,6 +5750,9 @@
           "409": {
             "description": "Already added, or lookup is off."
           },
+          "503": {
+            "description": "TMDB couldn't be reached."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -5619,9 +5762,6 @@
                 }
               }
             }
-          },
-          "503": {
-            "description": "TMDB couldn't be reached."
           }
         }
       }
@@ -6014,6 +6154,9 @@
           "409": {
             "description": "Title lookup is off for this workspace or server."
           },
+          "503": {
+            "description": "TMDB couldn't be reached."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -6023,9 +6166,6 @@
                 }
               }
             }
-          },
-          "503": {
-            "description": "TMDB couldn't be reached."
           }
         }
       }
@@ -6074,14 +6214,14 @@
               "image/png": {}
             }
           },
-          "204": {
-            "description": "The title has no poster."
-          },
           "401": {
             "description": "Not signed in."
           },
           "404": {
             "description": "The workspace or title does not exist or is not accessible."
+          },
+          "204": {
+            "description": "The title has no poster."
           },
           "422": {
             "description": "Validation Error",
@@ -6713,14 +6853,14 @@
               "image/x-icon": {}
             }
           },
-          "204": {
-            "description": "The bookmark has no preview image."
-          },
           "401": {
             "description": "Not signed in."
           },
           "404": {
             "description": "The workspace, bookmark, or collection is not accessible."
+          },
+          "204": {
+            "description": "The bookmark has no preview image."
           },
           "422": {
             "description": "Validation Error",
@@ -6782,14 +6922,14 @@
               "image/x-icon": {}
             }
           },
-          "204": {
-            "description": "The bookmark has no icon."
-          },
           "401": {
             "description": "Not signed in."
           },
           "404": {
             "description": "The workspace, bookmark, or collection is not accessible."
+          },
+          "204": {
+            "description": "The bookmark has no icon."
           },
           "422": {
             "description": "Validation Error",
@@ -7236,6 +7376,9 @@
           "409": {
             "description": "Online maps are off for this workspace."
           },
+          "502": {
+            "description": "The geocoder failed."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -7245,9 +7388,6 @@
                 }
               }
             }
-          },
-          "502": {
-            "description": "The geocoder failed."
           }
         }
       }
@@ -8512,11 +8652,11 @@
           "404": {
             "description": "The workspace or reminder does not exist or is not accessible."
           },
-          "409": {
-            "description": "The reminder is managed by a loan, subscription, or bill."
-          },
           "422": {
             "description": "Invalid input, a task outside this workspace, or a one-time reminder in the past."
+          },
+          "409": {
+            "description": "The reminder is managed by a loan, subscription, or bill."
           }
         }
       },
@@ -12577,6 +12717,9 @@
           "409": {
             "description": "Market data is off for this workspace or server."
           },
+          "503": {
+            "description": "The price service couldn't be reached."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -12586,9 +12729,6 @@
                 }
               }
             }
-          },
-          "503": {
-            "description": "The price service couldn't be reached."
           }
         }
       }
@@ -12638,6 +12778,9 @@
           "409": {
             "description": "Market data is off for this workspace or server."
           },
+          "503": {
+            "description": "The price service couldn't be reached."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -12647,9 +12790,6 @@
                 }
               }
             }
-          },
-          "503": {
-            "description": "The price service couldn't be reached."
           }
         }
       }
@@ -15613,14 +15753,14 @@
               }
             }
           },
-          "201": {
-            "description": "Created or refreshed."
-          },
           "401": {
             "description": "Not signed in."
           },
           "404": {
             "description": "The workspace, asset, or valuation does not exist."
+          },
+          "201": {
+            "description": "Created or refreshed."
           },
           "409": {
             "description": "An asset with that name exists, or a past snapshot can't change."
@@ -17792,14 +17932,14 @@
               }
             }
           },
-          "201": {
-            "description": "Created."
-          },
           "401": {
             "description": "Not signed in."
           },
           "404": {
             "description": "The workspace or note does not exist or is not accessible."
+          },
+          "201": {
+            "description": "Created."
           },
           "422": {
             "description": "Validation Error",
@@ -17850,14 +17990,14 @@
               }
             }
           },
-          "201": {
-            "description": "Created."
-          },
           "401": {
             "description": "Not signed in."
           },
           "404": {
             "description": "The workspace or note does not exist or is not accessible."
+          },
+          "201": {
+            "description": "Created."
           },
           "422": {
             "description": "Validation Error",
@@ -25223,14 +25363,14 @@
           "404": {
             "description": "The workspace or document does not exist or is not accessible."
           },
-          "409": {
-            "description": "The document is in the trash."
-          },
           "413": {
             "description": "The file is larger than the server accepts."
           },
           "415": {
             "description": "The file type isn't accepted, or doesn't match its contents."
+          },
+          "409": {
+            "description": "The document is in the trash."
           },
           "422": {
             "description": "Validation Error",
@@ -26598,11 +26738,11 @@
           "404": {
             "description": "The workspace or record does not exist or is not yours."
           },
-          "409": {
-            "description": "The change conflicts with the record's current state."
-          },
           "422": {
             "description": "Invalid values, or a reference that doesn't exist."
+          },
+          "409": {
+            "description": "The change conflicts with the record's current state."
           }
         }
       },
@@ -27430,11 +27570,11 @@
           "404": {
             "description": "The workspace or record does not exist or is not yours."
           },
-          "409": {
-            "description": "The change conflicts with the record's current state."
-          },
           "422": {
             "description": "Invalid values, or a reference that doesn't exist."
+          },
+          "409": {
+            "description": "The change conflicts with the record's current state."
           }
         }
       }
@@ -27677,11 +27817,11 @@
           "404": {
             "description": "The workspace or record does not exist or is not yours."
           },
-          "409": {
-            "description": "The change conflicts with the record's current state."
-          },
           "422": {
             "description": "Invalid values, or a reference that doesn't exist."
+          },
+          "409": {
+            "description": "The change conflicts with the record's current state."
           }
         }
       },
@@ -31463,11 +31603,11 @@
           "404": {
             "description": "The workspace or record does not exist or is not yours."
           },
-          "409": {
-            "description": "The change conflicts with the record's current state."
-          },
           "422": {
             "description": "Invalid values, or a reference that doesn't exist."
+          },
+          "409": {
+            "description": "The change conflicts with the record's current state."
           }
         }
       }
@@ -32813,14 +32953,14 @@
           "401": {
             "description": "Not signed in."
           },
-          "403": {
-            "description": "AI may not read any of the briefing's modules."
-          },
           "404": {
             "description": "No briefing was prepared for that date."
           },
           "409": {
             "description": "AI is off or not set up."
+          },
+          "403": {
+            "description": "AI may not read any of the briefing's modules."
           },
           "422": {
             "description": "Validation Error",
@@ -36054,6 +36194,9 @@
           "409": {
             "description": "AI is off, not configured, or cloud processing isn't allowed."
           },
+          "429": {
+            "description": "The monthly token limit has been reached."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -36063,9 +36206,6 @@
                 }
               }
             }
-          },
-          "429": {
-            "description": "The monthly token limit has been reached."
           }
         }
       }
@@ -37163,11 +37303,11 @@
           "401": {
             "description": "Not signed in."
           },
-          "422": {
-            "description": "The subscription isn't from a known browser push service."
-          },
           "503": {
             "description": "Push notifications aren't available on this server."
+          },
+          "422": {
+            "description": "The subscription isn't from a known browser push service."
           }
         },
         "security": [
@@ -37525,6 +37665,9 @@
           "409": {
             "description": "AI is off, speech isn't set up, or cloud isn't allowed."
           },
+          "429": {
+            "description": "The monthly AI limit has been reached."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -37534,9 +37677,6 @@
                 }
               }
             }
-          },
-          "429": {
-            "description": "The monthly AI limit has been reached."
           }
         }
       }
@@ -40290,8 +40430,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 200000,
-                "minimum": 1
+                "maximum": 200000.0,
+                "minimum": 1.0
               },
               {
                 "type": "null"
@@ -40303,8 +40443,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 1000000,
-                "minimum": 1
+                "maximum": 1000000.0,
+                "minimum": 1.0
               },
               {
                 "type": "null"
@@ -40316,8 +40456,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 86400,
-                "minimum": 1
+                "maximum": 86400.0,
+                "minimum": 1.0
               },
               {
                 "type": "null"
@@ -40791,21 +40931,21 @@
           },
           "value": {
             "type": "number",
-            "maximum": 1000000000,
-            "minimum": -1000000000,
+            "maximum": 1000000000.0,
+            "minimum": -1000000000.0,
             "title": "Value"
           },
           "check_minutes": {
             "type": "integer",
-            "maximum": 1440,
-            "minimum": 15,
+            "maximum": 1440.0,
+            "minimum": 15.0,
             "title": "Check Minutes",
             "default": 60
           },
           "days_ahead": {
             "type": "integer",
-            "maximum": 90,
-            "minimum": 1,
+            "maximum": 90.0,
+            "minimum": 1.0,
             "title": "Days Ahead",
             "default": 7
           }
@@ -40837,15 +40977,15 @@
           },
           "lead_minutes": {
             "type": "integer",
-            "maximum": 10080,
-            "minimum": 5,
+            "maximum": 10080.0,
+            "minimum": 5.0,
             "title": "Lead Minutes",
             "default": 60
           },
           "days_ahead": {
             "type": "integer",
-            "maximum": 365,
-            "minimum": 1,
+            "maximum": 365.0,
+            "minimum": 1.0,
             "title": "Days Ahead",
             "default": 30
           }
@@ -41236,57 +41376,57 @@
         "properties": {
           "max_steps": {
             "type": "integer",
-            "maximum": 20,
-            "minimum": 1,
+            "maximum": 20.0,
+            "minimum": 1.0,
             "title": "Max Steps",
             "default": 8
           },
           "max_tool_calls": {
             "type": "integer",
-            "maximum": 40,
-            "minimum": 1,
+            "maximum": 40.0,
+            "minimum": 1.0,
             "title": "Max Tool Calls",
             "default": 12
           },
           "timeout_seconds": {
             "type": "integer",
-            "maximum": 3600,
-            "minimum": 30,
+            "maximum": 3600.0,
+            "minimum": 30.0,
             "title": "Timeout Seconds",
             "default": 300
           },
           "max_tokens_per_run": {
             "type": "integer",
-            "maximum": 500000,
-            "minimum": 1000,
+            "maximum": 500000.0,
+            "minimum": 1000.0,
             "title": "Max Tokens Per Run",
             "default": 20000
           },
           "max_runs_per_day": {
             "type": "integer",
-            "maximum": 1000,
-            "minimum": 1,
+            "maximum": 1000.0,
+            "minimum": 1.0,
             "title": "Max Runs Per Day",
             "default": 50
           },
           "max_autonomous_actions_per_day": {
             "type": "integer",
-            "maximum": 200,
-            "minimum": 0,
+            "maximum": 200.0,
+            "minimum": 0.0,
             "title": "Max Autonomous Actions Per Day",
             "default": 10
           },
           "approval_ttl_hours": {
             "type": "integer",
-            "maximum": 336,
-            "minimum": 1,
+            "maximum": 336.0,
+            "minimum": 1.0,
             "title": "Approval Ttl Hours",
             "default": 24
           },
           "max_retries": {
             "type": "integer",
-            "maximum": 5,
-            "minimum": 0,
+            "maximum": 5.0,
+            "minimum": 0.0,
             "title": "Max Retries",
             "default": 2
           }
@@ -41408,8 +41548,8 @@
           },
           "retention_days": {
             "type": "integer",
-            "maximum": 3650,
-            "minimum": 1,
+            "maximum": 3650.0,
+            "minimum": 1.0,
             "title": "Retention Days",
             "default": 90
           }
@@ -41458,22 +41598,22 @@
           },
           "days_ahead": {
             "type": "integer",
-            "maximum": 30,
-            "minimum": 1,
+            "maximum": 30.0,
+            "minimum": 1.0,
             "title": "Days Ahead",
             "default": 3
           },
           "document_days": {
             "type": "integer",
-            "maximum": 365,
-            "minimum": 1,
+            "maximum": 365.0,
+            "minimum": 1.0,
             "title": "Document Days",
             "default": 30
           },
           "budget_percent": {
             "type": "integer",
-            "maximum": 200,
-            "minimum": 10,
+            "maximum": 200.0,
+            "minimum": 10.0,
             "title": "Budget Percent",
             "default": 80
           }
@@ -41774,8 +41914,8 @@
           "weekdays": {
             "items": {
               "type": "integer",
-              "maximum": 6,
-              "minimum": 0
+              "maximum": 6.0,
+              "minimum": 0.0
             },
             "type": "array",
             "maxItems": 7,
@@ -41786,8 +41926,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 31,
-                "minimum": 1
+                "maximum": 31.0,
+                "minimum": 1.0
               },
               {
                 "type": "null"
@@ -42083,8 +42223,8 @@
           },
           "max_runs_per_day": {
             "type": "integer",
-            "maximum": 1000,
-            "minimum": 1,
+            "maximum": 1000.0,
+            "minimum": 1.0,
             "title": "Max Runs Per Day",
             "default": 24
           }
@@ -42272,8 +42412,8 @@
           },
           "minutes": {
             "type": "integer",
-            "maximum": 10080,
-            "minimum": 0,
+            "maximum": 10080.0,
+            "minimum": 0.0,
             "title": "Minutes",
             "default": 0
           },
@@ -44558,16 +44698,16 @@
         "properties": {
           "lock_after_minutes": {
             "type": "integer",
-            "maximum": 1440,
-            "minimum": 1,
+            "maximum": 1440.0,
+            "minimum": 1.0,
             "title": "Lock After Minutes"
           },
           "sign_out_after_minutes": {
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 43200,
-                "minimum": 1
+                "maximum": 43200.0,
+                "minimum": 1.0
               },
               {
                 "type": "null"
@@ -47518,8 +47658,8 @@
         "properties": {
           "horizon_days": {
             "type": "integer",
-            "maximum": 14,
-            "minimum": 1,
+            "maximum": 14.0,
+            "minimum": 1.0,
             "title": "Horizon Days",
             "description": "How many days ahead upcoming events, deadlines, and payments look."
           },
@@ -48757,8 +48897,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 6,
-                "minimum": 0
+                "maximum": 6.0,
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -48822,8 +48962,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 6,
-                "minimum": 0
+                "maximum": 6.0,
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -49100,8 +49240,8 @@
           },
           "value": {
             "type": "number",
-            "maximum": 1000000000,
-            "minimum": -1000000000,
+            "maximum": 1000000000.0,
+            "minimum": -1000000000.0,
             "title": "Value"
           },
           "note": {
@@ -49168,8 +49308,8 @@
           },
           "amount": {
             "type": "integer",
-            "maximum": 10000000000000,
-            "minimum": 0,
+            "maximum": 10000000000000.0,
+            "minimum": 0.0,
             "title": "Amount",
             "description": "Minor units."
           },
@@ -49496,8 +49636,8 @@
           },
           "opening_balance": {
             "type": "integer",
-            "maximum": 10000000000000,
-            "minimum": -10000000000000,
+            "maximum": 10000000000000.0,
+            "minimum": -10000000000000.0,
             "title": "Opening Balance",
             "description": "Minor units. Positive is money held, negative is money owed: a credit card with ₹500 outstanding is -50000.",
             "default": 0
@@ -49566,8 +49706,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 1000000000000,
-                "minimum": 0
+                "maximum": 1000000000000.0,
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -49579,8 +49719,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 1000000000000,
-                "minimum": 0
+                "maximum": 1000000000000.0,
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -49649,8 +49789,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 10000000000000,
-                "minimum": 0,
+                "maximum": 10000000000000.0,
+                "minimum": 0.0,
                 "description": "Minor units."
               },
               {
@@ -49663,8 +49803,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 10000000000000,
-                "minimum": 0,
+                "maximum": 10000000000000.0,
+                "minimum": 0.0,
                 "description": "Minor units."
               },
               {
@@ -49934,8 +50074,8 @@
           },
           "amount": {
             "type": "integer",
-            "maximum": 10000000000000,
-            "exclusiveMinimum": 0,
+            "maximum": 10000000000000.0,
+            "exclusiveMinimum": 0.0,
             "title": "Amount",
             "description": "Minor units, always positive: ₹12.50 is 1250."
           },
@@ -49984,8 +50124,8 @@
           "alert_thresholds": {
             "items": {
               "type": "integer",
-              "maximum": 200,
-              "minimum": 1
+              "maximum": 200.0,
+              "minimum": 1.0
             },
             "type": "array",
             "maxItems": 6,
@@ -50091,8 +50231,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 10000000000000,
-                "exclusiveMinimum": 0,
+                "maximum": 10000000000000.0,
+                "exclusiveMinimum": 0.0,
                 "description": "Minor units, always positive: ₹12.50 is 1250."
               },
               {
@@ -50179,8 +50319,8 @@
           },
           "interest_rate_bps": {
             "type": "integer",
-            "maximum": 10000,
-            "minimum": 0,
+            "maximum": 10000.0,
+            "minimum": 0.0,
             "title": "Interest Rate Bps",
             "description": "Annual interest rate in basis points: 7.1% is 710."
           },
@@ -50208,8 +50348,8 @@
           },
           "amount": {
             "type": "integer",
-            "maximum": 10000000000000,
-            "exclusiveMinimum": 0,
+            "maximum": 10000000000000.0,
+            "exclusiveMinimum": 0.0,
             "title": "Amount",
             "description": "Minor units, always positive: ₹12.50 is 1250."
           },
@@ -50239,8 +50379,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 10000000000000,
-                "exclusiveMinimum": 0,
+                "maximum": 10000000000000.0,
+                "exclusiveMinimum": 0.0,
                 "description": "Minor units, always positive: ₹12.50 is 1250."
               },
               {
@@ -50484,8 +50624,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 10000000000000,
-                "minimum": 0,
+                "maximum": 10000000000000.0,
+                "minimum": 0.0,
                 "description": "Minor units: ₹12.50 is 1250."
               },
               {
@@ -50551,8 +50691,8 @@
               {
                 "items": {
                   "type": "integer",
-                  "maximum": 365,
-                  "minimum": 0
+                  "maximum": 365.0,
+                  "minimum": 0.0
                 },
                 "type": "array",
                 "maxItems": 6
@@ -50718,8 +50858,8 @@
           "alerts": {
             "items": {
               "type": "integer",
-              "maximum": 40320,
-              "minimum": 0
+              "maximum": 40320.0,
+              "minimum": 0.0
             },
             "type": "array",
             "title": "Alerts"
@@ -50838,8 +50978,8 @@
           },
           "target_amount": {
             "type": "integer",
-            "maximum": 10000000000000,
-            "exclusiveMinimum": 0,
+            "maximum": 10000000000000.0,
+            "exclusiveMinimum": 0.0,
             "title": "Target Amount",
             "description": "Minor units, always positive: ₹12.50 is 1250."
           },
@@ -51059,8 +51199,8 @@
             "anyOf": [
               {
                 "type": "number",
-                "maximum": 1000000,
-                "exclusiveMinimum": 0
+                "maximum": 1000000.0,
+                "exclusiveMinimum": 0.0
               },
               {
                 "type": "null"
@@ -51422,8 +51562,8 @@
           },
           "principal": {
             "type": "integer",
-            "maximum": 10000000000000,
-            "exclusiveMinimum": 0,
+            "maximum": 10000000000000.0,
+            "exclusiveMinimum": 0.0,
             "title": "Principal",
             "description": "The amount originally borrowed."
           },
@@ -51431,8 +51571,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 10000000000000,
-                "exclusiveMinimum": 0,
+                "maximum": 10000000000000.0,
+                "exclusiveMinimum": 0.0,
                 "description": "Minor units, always positive: ₹12.50 is 1250."
               },
               {
@@ -51444,8 +51584,8 @@
           },
           "interest_rate_bps": {
             "type": "integer",
-            "maximum": 10000,
-            "minimum": 0,
+            "maximum": 10000.0,
+            "minimum": 0.0,
             "title": "Interest Rate Bps",
             "description": "Annual interest rate in basis points: 8.5% is 850."
           },
@@ -51466,8 +51606,8 @@
           },
           "tenure_months": {
             "type": "integer",
-            "maximum": 7200,
-            "minimum": 1,
+            "maximum": 7200.0,
+            "minimum": 1.0,
             "title": "Tenure Months",
             "description": "The loan's term in months."
           },
@@ -51504,8 +51644,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 10000000000000,
-                "exclusiveMinimum": 0,
+                "maximum": 10000000000000.0,
+                "exclusiveMinimum": 0.0,
                 "description": "Minor units, always positive: ₹12.50 is 1250."
               },
               {
@@ -51642,8 +51782,8 @@
           },
           "amount": {
             "type": "integer",
-            "maximum": 10000000000000,
-            "exclusiveMinimum": 0,
+            "maximum": 10000000000000.0,
+            "exclusiveMinimum": 0.0,
             "title": "Amount",
             "description": "Minor units, always positive: ₹12.50 is 1250."
           },
@@ -51919,8 +52059,8 @@
           },
           "amount": {
             "type": "integer",
-            "maximum": 10000000000000,
-            "exclusiveMinimum": 0,
+            "maximum": 10000000000000.0,
+            "exclusiveMinimum": 0.0,
             "title": "Amount",
             "description": "Minor units, always positive: ₹12.50 is 1250."
           },
@@ -52263,8 +52403,8 @@
           },
           "amount": {
             "type": "integer",
-            "maximum": 10000000000000,
-            "exclusiveMinimum": 0,
+            "maximum": 10000000000000.0,
+            "exclusiveMinimum": 0.0,
             "title": "Amount",
             "description": "Minor units, always positive: ₹12.50 is 1250."
           },
@@ -52469,8 +52609,8 @@
           },
           "amount": {
             "type": "integer",
-            "maximum": 10000000000000,
-            "exclusiveMinimum": 0,
+            "maximum": 10000000000000.0,
+            "exclusiveMinimum": 0.0,
             "title": "Amount",
             "description": "Minor units, always positive: ₹12.50 is 1250."
           },
@@ -52537,8 +52677,8 @@
         "properties": {
           "amount": {
             "type": "integer",
-            "maximum": 10000000000000,
-            "exclusiveMinimum": 0,
+            "maximum": 10000000000000.0,
+            "exclusiveMinimum": 0.0,
             "title": "Amount",
             "description": "Minor units, always positive: ₹12.50 is 1250."
           },
@@ -52596,8 +52736,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 2147483647,
-                "minimum": 1,
+                "maximum": 2147483647.0,
+                "minimum": 1.0,
                 "description": "The title's TMDB ID."
               },
               {
@@ -52623,8 +52763,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 2200,
-                "minimum": 1870
+                "maximum": 2200.0,
+                "minimum": 1870.0
               },
               {
                 "type": "null"
@@ -52636,8 +52776,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 6000,
-                "minimum": 1,
+                "maximum": 6000.0,
+                "minimum": 1.0,
                 "description": "Minutes."
               },
               {
@@ -52892,8 +53032,8 @@
           },
           "amount": {
             "type": "integer",
-            "maximum": 10000000000000,
-            "exclusiveMinimum": 0,
+            "maximum": 10000000000000.0,
+            "exclusiveMinimum": 0.0,
             "title": "Amount",
             "description": "Minor units, always positive: ₹12.50 is 1250."
           },
@@ -53220,8 +53360,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 10000000000000,
-                "minimum": 0,
+                "maximum": 10000000000000.0,
+                "minimum": 0.0,
                 "description": "Minor units."
               },
               {
@@ -56243,8 +56383,8 @@
           },
           "serving_quantity_milli": {
             "type": "integer",
-            "maximum": 100000000,
-            "minimum": 1,
+            "maximum": 100000000.0,
+            "minimum": 1.0,
             "title": "Serving Quantity Milli",
             "description": "How much one serving is, in thousandths of the unit (100 g is 100000)."
           },
@@ -56361,14 +56501,14 @@
           },
           "start_value": {
             "type": "number",
-            "maximum": 1000000000,
-            "minimum": -1000000000,
+            "maximum": 1000000000.0,
+            "minimum": -1000000000.0,
             "title": "Start Value"
           },
           "target_value": {
             "type": "number",
-            "maximum": 1000000000,
-            "minimum": -1000000000,
+            "maximum": 1000000000.0,
+            "minimum": -1000000000.0,
             "title": "Target Value"
           },
           "start_date": {
@@ -58133,8 +58273,8 @@
           },
           "every": {
             "type": "integer",
-            "maximum": 365,
-            "minimum": 1,
+            "maximum": 365.0,
+            "minimum": 1.0,
             "title": "Every",
             "default": 1
           },
@@ -58157,16 +58297,16 @@
           "month_days": {
             "items": {
               "type": "integer",
-              "maximum": 31,
-              "minimum": 1
+              "maximum": 31.0,
+              "minimum": 1.0
             },
             "type": "array",
             "title": "Month Days"
           },
           "times_per_week": {
             "type": "integer",
-            "maximum": 7,
-            "minimum": 0,
+            "maximum": 7.0,
+            "minimum": 0.0,
             "title": "Times Per Week",
             "default": 0
           }
@@ -58667,8 +58807,8 @@
           },
           "amount": {
             "type": "integer",
-            "maximum": 10000000000000,
-            "exclusiveMinimum": 0,
+            "maximum": 10000000000000.0,
+            "exclusiveMinimum": 0.0,
             "title": "Amount",
             "description": "Minor units, always positive: ₹12.50 is 1250."
           },
@@ -60891,8 +61031,8 @@
             "anyOf": [
               {
                 "type": "number",
-                "maximum": 1000000,
-                "minimum": 0
+                "maximum": 1000000.0,
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -61247,8 +61387,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 650000,
-                "minimum": 1000
+                "maximum": 650000.0,
+                "minimum": 1000.0
               },
               {
                 "type": "null"
@@ -61260,8 +61400,8 @@
             "anyOf": [
               {
                 "type": "number",
-                "exclusiveMaximum": 100,
-                "exclusiveMinimum": 0
+                "exclusiveMaximum": 100.0,
+                "exclusiveMinimum": 0.0
               },
               {
                 "type": "null"
@@ -61274,8 +61414,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 2720,
-                "minimum": 500,
+                "maximum": 2720.0,
+                "minimum": 500.0,
                 "description": "Millimetres."
               },
               {
@@ -61288,8 +61428,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 3000,
-                "minimum": 10,
+                "maximum": 3000.0,
+                "minimum": 10.0,
                 "description": "Millimetres."
               },
               {
@@ -61302,8 +61442,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 3000,
-                "minimum": 10,
+                "maximum": 3000.0,
+                "minimum": 10.0,
                 "description": "Millimetres."
               },
               {
@@ -61316,8 +61456,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 3000,
-                "minimum": 10,
+                "maximum": 3000.0,
+                "minimum": 10.0,
                 "description": "Millimetres."
               },
               {
@@ -61330,8 +61470,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 3000,
-                "minimum": 10,
+                "maximum": 3000.0,
+                "minimum": 10.0,
                 "description": "Millimetres."
               },
               {
@@ -61344,8 +61484,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 3000,
-                "minimum": 10,
+                "maximum": 3000.0,
+                "minimum": 10.0,
                 "description": "Millimetres."
               },
               {
@@ -61358,8 +61498,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 3000,
-                "minimum": 10,
+                "maximum": 3000.0,
+                "minimum": 10.0,
                 "description": "Millimetres."
               },
               {
@@ -62683,32 +62823,32 @@
         "properties": {
           "energy_cal": {
             "type": "integer",
-            "maximum": 100000000,
-            "minimum": 0,
+            "maximum": 100000000.0,
+            "minimum": 0.0,
             "title": "Energy Cal",
             "description": "Small calories (1 kcal = 1,000 cal).",
             "default": 0
           },
           "protein_mg": {
             "type": "integer",
-            "maximum": 10000000,
-            "minimum": 0,
+            "maximum": 10000000.0,
+            "minimum": 0.0,
             "title": "Protein Mg",
             "description": "Milligrams.",
             "default": 0
           },
           "carbs_mg": {
             "type": "integer",
-            "maximum": 10000000,
-            "minimum": 0,
+            "maximum": 10000000.0,
+            "minimum": 0.0,
             "title": "Carbs Mg",
             "description": "Milligrams.",
             "default": 0
           },
           "fat_mg": {
             "type": "integer",
-            "maximum": 10000000,
-            "minimum": 0,
+            "maximum": 10000000.0,
+            "minimum": 0.0,
             "title": "Fat Mg",
             "description": "Milligrams.",
             "default": 0
@@ -62717,8 +62857,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 10000000,
-                "minimum": 0,
+                "maximum": 10000000.0,
+                "minimum": 0.0,
                 "description": "Milligrams."
               },
               {
@@ -62916,8 +63056,8 @@
           },
           "amount": {
             "type": "integer",
-            "maximum": 10000000000000,
-            "exclusiveMinimum": 0,
+            "maximum": 10000000000000.0,
+            "exclusiveMinimum": 0.0,
             "title": "Amount",
             "description": "What was invested in total."
           },
@@ -63253,8 +63393,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 10000000000000,
-                "minimum": 0
+                "maximum": 10000000000000.0,
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -63267,8 +63407,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 10000000000000,
-                "minimum": 0
+                "maximum": 10000000000000.0,
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -63645,22 +63785,22 @@
           },
           "month": {
             "type": "integer",
-            "maximum": 12,
-            "minimum": 1,
+            "maximum": 12.0,
+            "minimum": 1.0,
             "title": "Month"
           },
           "day": {
             "type": "integer",
-            "maximum": 31,
-            "minimum": 1,
+            "maximum": 31.0,
+            "minimum": 1.0,
             "title": "Day"
           },
           "year": {
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 2100,
-                "minimum": 1900
+                "maximum": 2100.0,
+                "minimum": 1900.0
               },
               {
                 "type": "null"
@@ -63672,8 +63812,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 30,
-                "minimum": 0
+                "maximum": 30.0,
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -64116,14 +64256,14 @@
         "properties": {
           "latitude": {
             "type": "number",
-            "maximum": 90,
-            "minimum": -90,
+            "maximum": 90.0,
+            "minimum": -90.0,
             "title": "Latitude"
           },
           "longitude": {
             "type": "number",
-            "maximum": 180,
-            "minimum": -180,
+            "maximum": 180.0,
+            "minimum": -180.0,
             "title": "Longitude"
           }
         },
@@ -64634,8 +64774,8 @@
         "properties": {
           "quantity_milli": {
             "type": "integer",
-            "maximum": 100000000,
-            "minimum": 1,
+            "maximum": 100000000.0,
+            "minimum": 1.0,
             "title": "Quantity Milli",
             "description": "Thousandths of a unit (1.5 is 1500)."
           },
@@ -64911,8 +65051,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 2720,
-                "minimum": 500,
+                "maximum": 2720.0,
+                "minimum": 500.0,
                 "description": "Millimetres."
               },
               {
@@ -64940,8 +65080,8 @@
           "water_quick_amounts_ml": {
             "items": {
               "type": "integer",
-              "maximum": 5000,
-              "minimum": 1
+              "maximum": 5000.0,
+              "minimum": 1.0
             },
             "type": "array",
             "maxItems": 6,
@@ -65098,14 +65238,14 @@
         "properties": {
           "season": {
             "type": "integer",
-            "maximum": 500,
-            "minimum": 1,
+            "maximum": 500.0,
+            "minimum": 1.0,
             "title": "Season"
           },
           "episode": {
             "type": "integer",
-            "maximum": 10000,
-            "minimum": 1,
+            "maximum": 10000.0,
+            "minimum": 1.0,
             "title": "Episode"
           }
         },
@@ -65342,8 +65482,8 @@
           },
           "focused_seconds": {
             "type": "integer",
-            "maximum": 14400,
-            "minimum": 60,
+            "maximum": 14400.0,
+            "minimum": 60.0,
             "title": "Focused Seconds",
             "description": "Time spent focusing, without pauses: at most the time between start and end."
           },
@@ -65392,8 +65532,8 @@
           },
           "amount": {
             "type": "integer",
-            "maximum": 10000000000000,
-            "exclusiveMinimum": 0,
+            "maximum": 10000000000000.0,
+            "exclusiveMinimum": 0.0,
             "title": "Amount",
             "description": "Minor units, always positive: ₹12.50 is 1250."
           },
@@ -65471,8 +65611,8 @@
           },
           "fees": {
             "type": "integer",
-            "maximum": 10000000000000,
-            "minimum": 0,
+            "maximum": 10000000000000.0,
+            "minimum": 0.0,
             "title": "Fees",
             "description": "Minor units.",
             "default": 0
@@ -65602,8 +65742,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 10000000000000,
-                "exclusiveMinimum": 0,
+                "maximum": 10000000000000.0,
+                "exclusiveMinimum": 0.0,
                 "description": "Minor units, always positive: ₹12.50 is 1250."
               },
               {
@@ -65671,8 +65811,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 10000000000000,
-                "exclusiveMinimum": 0,
+                "maximum": 10000000000000.0,
+                "exclusiveMinimum": 0.0,
                 "description": "Minor units, always positive: ₹12.50 is 1250."
               },
               {
@@ -65725,8 +65865,8 @@
           },
           "fees": {
             "type": "integer",
-            "maximum": 10000000000000,
-            "minimum": 0,
+            "maximum": 10000000000000.0,
+            "minimum": 0.0,
             "title": "Fees",
             "description": "Minor units.",
             "default": 0
@@ -65755,8 +65895,8 @@
           },
           "value": {
             "type": "integer",
-            "maximum": 10000000000000,
-            "minimum": 0,
+            "maximum": 10000000000000.0,
+            "minimum": 0.0,
             "title": "Value",
             "description": "Minor units."
           },
@@ -65828,8 +65968,8 @@
           },
           "interval": {
             "type": "integer",
-            "maximum": 99,
-            "minimum": 1,
+            "maximum": 99.0,
+            "minimum": 1.0,
             "title": "Interval",
             "default": 1
           },
@@ -65854,8 +65994,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 999,
-                "minimum": 1
+                "maximum": 999.0,
+                "minimum": 1.0
               },
               {
                 "type": "null"
@@ -66366,8 +66506,8 @@
         "properties": {
           "days_before": {
             "type": "integer",
-            "maximum": 30,
-            "minimum": 0,
+            "maximum": 30.0,
+            "minimum": 0.0,
             "title": "Days Before",
             "description": "0 reminds on the due date itself."
           },
@@ -66725,8 +66865,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 10000,
-                "minimum": 0,
+                "maximum": 10000.0,
+                "minimum": 0.0,
                 "description": "Annual interest rate in basis points: 8.5% is 850."
               },
               {
@@ -66739,8 +66879,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 10000000000000,
-                "exclusiveMinimum": 0,
+                "maximum": 10000000000000.0,
+                "exclusiveMinimum": 0.0,
                 "description": "Minor units, always positive: ₹12.50 is 1250."
               },
               {
@@ -67512,8 +67652,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 1440,
-                "minimum": 1
+                "maximum": 1440.0,
+                "minimum": 1.0
               },
               {
                 "type": "null"
@@ -68069,8 +68209,8 @@
           "alerts": {
             "items": {
               "type": "integer",
-              "maximum": 40320,
-              "minimum": 0
+              "maximum": 40320.0,
+              "minimum": 0.0
             },
             "type": "array",
             "title": "Alerts"
@@ -68919,8 +69059,8 @@
           },
           "expected_income": {
             "type": "integer",
-            "maximum": 10000000000000,
-            "minimum": 0,
+            "maximum": 10000000000000.0,
+            "minimum": 0.0,
             "title": "Expected Income",
             "description": "Minor units."
           },
@@ -68956,8 +69096,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 10000,
-                "minimum": 0
+                "maximum": 10000.0,
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -68969,8 +69109,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 2000000,
-                "minimum": 0,
+                "maximum": 2000000.0,
+                "minimum": 0.0,
                 "description": "Grams."
               },
               {
@@ -68983,8 +69123,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 172800,
-                "minimum": 0,
+                "maximum": 172800.0,
+                "minimum": 0.0,
                 "description": "Seconds."
               },
               {
@@ -68997,8 +69137,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 1000000,
-                "minimum": 0,
+                "maximum": 1000000.0,
+                "minimum": 0.0,
                 "description": "Metres."
               },
               {
@@ -69011,8 +69151,8 @@
             "anyOf": [
               {
                 "type": "number",
-                "maximum": 10,
-                "minimum": 1,
+                "maximum": 10.0,
+                "minimum": 1.0,
                 "description": "Effort, 1 to 10 in steps of 0.5."
               },
               {
@@ -70498,6 +70638,170 @@
         "title": "SupabaseAuthConfig",
         "description": "Public Supabase settings the web app needs to sign users in. Contains no secrets."
       },
+      "SystemDatabaseStatus": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "outdated"
+            ],
+            "title": "Status",
+            "description": "`outdated` when the schema isn't at this version's revision: run `pnpm db:migrate`."
+          },
+          "revision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision",
+            "description": "The database's schema revision."
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Revision",
+            "description": "The revision this version expects."
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "revision",
+          "expected_revision"
+        ],
+        "title": "SystemDatabaseStatus"
+      },
+      "SystemFeatures": {
+        "properties": {
+          "ai": {
+            "type": "boolean",
+            "title": "Ai"
+          },
+          "agent": {
+            "type": "boolean",
+            "title": "Agent"
+          },
+          "web_push": {
+            "type": "boolean",
+            "title": "Web Push"
+          },
+          "google": {
+            "type": "boolean",
+            "title": "Google"
+          },
+          "microsoft": {
+            "type": "boolean",
+            "title": "Microsoft"
+          },
+          "online_maps": {
+            "type": "boolean",
+            "title": "Online Maps"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ai",
+          "agent",
+          "web_push",
+          "google",
+          "microsoft",
+          "online_maps"
+        ],
+        "title": "SystemFeatures",
+        "description": "Optional parts the server's configuration turns on. Never secrets or addresses."
+      },
+      "SystemSettingsRequest": {
+        "properties": {
+          "update_check_enabled": {
+            "type": "boolean",
+            "title": "Update Check Enabled",
+            "description": "Ask GitHub for the latest release about once a day. GitHub sees the server's address; nothing else is sent."
+          }
+        },
+        "type": "object",
+        "required": [
+          "update_check_enabled"
+        ],
+        "title": "SystemSettingsRequest"
+      },
+      "SystemStatusResponse": {
+        "properties": {
+          "version": {
+            "type": "string",
+            "title": "Version",
+            "description": "Version of the running API."
+          },
+          "storage_mode": {
+            "type": "string",
+            "enum": [
+              "local",
+              "cloud"
+            ],
+            "title": "Storage Mode"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Started At",
+            "description": "When the API process started."
+          },
+          "database": {
+            "$ref": "#/components/schemas/SystemDatabaseStatus"
+          },
+          "worker": {
+            "$ref": "#/components/schemas/SystemWorkerStatus"
+          },
+          "features": {
+            "$ref": "#/components/schemas/SystemFeatures"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version",
+          "storage_mode",
+          "started_at",
+          "database",
+          "worker",
+          "features"
+        ],
+        "title": "SystemStatusResponse",
+        "description": "Health of this installation, for whoever runs it. Reveals no paths or secrets."
+      },
+      "SystemWorkerStatus": {
+        "properties": {
+          "runs_in_api": {
+            "type": "boolean",
+            "title": "Runs In Api",
+            "description": "Whether the API process runs the worker; otherwise `orbit-worker` must."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "behind"
+            ],
+            "title": "Status",
+            "description": "`behind` when reminders that were due minutes ago are still waiting, which usually means no worker is running."
+          }
+        },
+        "type": "object",
+        "required": [
+          "runs_in_api",
+          "status"
+        ],
+        "title": "SystemWorkerStatus"
+      },
       "TableResultResponse": {
         "properties": {
           "table": {
@@ -70678,8 +70982,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 20000000,
-                "minimum": 1
+                "maximum": 20000000.0,
+                "minimum": 1.0
               },
               {
                 "type": "null"
@@ -70691,8 +70995,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 2000000,
-                "minimum": 1
+                "maximum": 2000000.0,
+                "minimum": 1.0
               },
               {
                 "type": "null"
@@ -70704,8 +71008,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 2000000,
-                "minimum": 1
+                "maximum": 2000000.0,
+                "minimum": 1.0
               },
               {
                 "type": "null"
@@ -70717,8 +71021,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 2000000,
-                "minimum": 1
+                "maximum": 2000000.0,
+                "minimum": 1.0
               },
               {
                 "type": "null"
@@ -70730,8 +71034,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 2000000,
-                "minimum": 1
+                "maximum": 2000000.0,
+                "minimum": 1.0
               },
               {
                 "type": "null"
@@ -70743,8 +71047,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 20000,
-                "minimum": 1
+                "maximum": 20000.0,
+                "minimum": 1.0
               },
               {
                 "type": "null"
@@ -70756,8 +71060,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 200000,
-                "minimum": 1
+                "maximum": 200000.0,
+                "minimum": 1.0
               },
               {
                 "type": "null"
@@ -70770,8 +71074,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 86400,
-                "minimum": 60
+                "maximum": 86400.0,
+                "minimum": 60.0
               },
               {
                 "type": "null"
@@ -70784,8 +71088,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 86400,
-                "minimum": 3600
+                "maximum": 86400.0,
+                "minimum": 3600.0
               },
               {
                 "type": "null"
@@ -70921,8 +71225,8 @@
           },
           "interval": {
             "type": "integer",
-            "maximum": 99,
-            "minimum": 1,
+            "maximum": 99.0,
+            "minimum": 1.0,
             "title": "Interval",
             "description": "Every this many days, weeks, months, or years.",
             "default": 1
@@ -71119,8 +71423,8 @@
           },
           "sets": {
             "type": "integer",
-            "maximum": 20,
-            "minimum": 1,
+            "maximum": 20.0,
+            "minimum": 1.0,
             "title": "Sets",
             "default": 3
           },
@@ -71128,8 +71432,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 1000,
-                "minimum": 1
+                "maximum": 1000.0,
+                "minimum": 1.0
               },
               {
                 "type": "null"
@@ -71141,8 +71445,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 1000,
-                "minimum": 1
+                "maximum": 1000.0,
+                "minimum": 1.0
               },
               {
                 "type": "null"
@@ -71154,8 +71458,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 2000000,
-                "minimum": 0,
+                "maximum": 2000000.0,
+                "minimum": 0.0,
                 "description": "Grams."
               },
               {
@@ -71168,8 +71472,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 172800,
-                "minimum": 1
+                "maximum": 172800.0,
+                "minimum": 1.0
               },
               {
                 "type": "null"
@@ -71181,8 +71485,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 1000000,
-                "minimum": 1
+                "maximum": 1000000.0,
+                "minimum": 1.0
               },
               {
                 "type": "null"
@@ -71194,8 +71498,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 3600,
-                "minimum": 0,
+                "maximum": 3600.0,
+                "minimum": 0.0,
                 "description": "Rest between sets, in seconds."
               },
               {
@@ -72319,8 +72623,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 10000000000000,
-                "minimum": -10000000000000,
+                "maximum": 10000000000000.0,
+                "minimum": -10000000000000.0,
                 "description": "Minor units. Positive is money held, negative is money owed: a credit card with ₹500 outstanding is -50000."
               },
               {
@@ -72610,8 +72914,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 1000000000000,
-                "minimum": 0
+                "maximum": 1000000000000.0,
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -72623,8 +72927,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 1000000000000,
-                "minimum": 0
+                "maximum": 1000000000000.0,
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -72783,8 +73087,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 10000000000,
-                "minimum": 1000
+                "maximum": 10000000000.0,
+                "minimum": 1000.0
               },
               {
                 "type": "null"
@@ -72869,8 +73173,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 10000000000000,
-                "minimum": 0,
+                "maximum": 10000000000000.0,
+                "minimum": 0.0,
                 "description": "Minor units."
               },
               {
@@ -72945,8 +73249,8 @@
           },
           "retention_count": {
             "type": "integer",
-            "maximum": 50,
-            "minimum": 1,
+            "maximum": 50.0,
+            "minimum": 1.0,
             "title": "Retention Count"
           },
           "include_files": {
@@ -73165,8 +73469,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 10000000000000,
-                "exclusiveMinimum": 0,
+                "maximum": 10000000000000.0,
+                "exclusiveMinimum": 0.0,
                 "description": "Minor units, always positive: ₹12.50 is 1250."
               },
               {
@@ -73232,8 +73536,8 @@
               {
                 "items": {
                   "type": "integer",
-                  "maximum": 200,
-                  "minimum": 1
+                  "maximum": 200.0,
+                  "minimum": 1.0
                 },
                 "type": "array",
                 "maxItems": 6,
@@ -73346,8 +73650,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 10000,
-                "minimum": 0,
+                "maximum": 10000.0,
+                "minimum": 0.0,
                 "description": "Annual interest rate in basis points: 7.1% is 710."
               },
               {
@@ -73390,8 +73694,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 10000000000000,
-                "exclusiveMinimum": 0,
+                "maximum": 10000000000000.0,
+                "exclusiveMinimum": 0.0,
                 "description": "Minor units, always positive: ₹12.50 is 1250."
               },
               {
@@ -73404,8 +73708,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 10000000000000,
-                "exclusiveMinimum": 0,
+                "maximum": 10000000000000.0,
+                "exclusiveMinimum": 0.0,
                 "description": "Minor units, always positive: ₹12.50 is 1250."
               },
               {
@@ -73695,8 +73999,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 10000000000000,
-                "minimum": 0,
+                "maximum": 10000000000000.0,
+                "minimum": 0.0,
                 "description": "Minor units: ₹12.50 is 1250."
               },
               {
@@ -73777,8 +74081,8 @@
               {
                 "items": {
                   "type": "integer",
-                  "maximum": 365,
-                  "minimum": 0
+                  "maximum": 365.0,
+                  "minimum": 0.0
                 },
                 "type": "array",
                 "maxItems": 6
@@ -73949,8 +74253,8 @@
               {
                 "items": {
                   "type": "integer",
-                  "maximum": 40320,
-                  "minimum": 0
+                  "maximum": 40320.0,
+                  "minimum": 0.0
                 },
                 "type": "array"
               },
@@ -74067,8 +74371,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 10000000000000,
-                "exclusiveMinimum": 0,
+                "maximum": 10000000000000.0,
+                "exclusiveMinimum": 0.0,
                 "description": "Minor units, always positive: ₹12.50 is 1250."
               },
               {
@@ -74329,8 +74633,8 @@
             "anyOf": [
               {
                 "type": "number",
-                "maximum": 1000000,
-                "exclusiveMinimum": 0
+                "maximum": 1000000.0,
+                "exclusiveMinimum": 0.0
               },
               {
                 "type": "null"
@@ -74554,8 +74858,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 10000000000000,
-                "minimum": 0
+                "maximum": 10000000000000.0,
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -74567,8 +74871,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 10000000000000,
-                "minimum": 0
+                "maximum": 10000000000000.0,
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -74963,7 +75267,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "minimum": 1
+                "minimum": 1.0
               },
               {
                 "type": "null"
@@ -75174,8 +75478,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 10000000000000,
-                "exclusiveMinimum": 0,
+                "maximum": 10000000000000.0,
+                "exclusiveMinimum": 0.0,
                 "description": "Minor units, always positive: ₹12.50 is 1250."
               },
               {
@@ -75576,8 +75880,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 10000000000000,
-                "exclusiveMinimum": 0,
+                "maximum": 10000000000000.0,
+                "exclusiveMinimum": 0.0,
                 "description": "Minor units, always positive: ₹12.50 is 1250."
               },
               {
@@ -76051,8 +76355,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 3600,
-                "minimum": 0,
+                "maximum": 3600.0,
+                "minimum": 0.0,
                 "description": "Rest between sets, in seconds."
               },
               {
@@ -76212,8 +76516,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 10000000000000,
-                "exclusiveMinimum": 0,
+                "maximum": 10000000000000.0,
+                "exclusiveMinimum": 0.0,
                 "description": "Minor units, always positive: ₹12.50 is 1250."
               },
               {
@@ -76320,6 +76624,96 @@
         "type": "object",
         "title": "UpdateSipPlanRequest",
         "description": "`state` pauses, cancels, or resumes (`active`) the SIP. `null` clears `end_date` or\n`funding_account_id`."
+      },
+      "UpdateStatusResponse": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled",
+            "description": "Whether this server checks for new releases."
+          },
+          "repository": {
+            "type": "string",
+            "title": "Repository",
+            "description": "The GitHub repository whose releases it follows."
+          },
+          "current_version": {
+            "type": "string",
+            "title": "Current Version"
+          },
+          "latest_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Version",
+            "description": "The newest release found, e.g. `1.2.0`."
+          },
+          "latest_published_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Published At"
+          },
+          "update_available": {
+            "type": "boolean",
+            "title": "Update Available"
+          },
+          "release_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Release Url",
+            "description": "The newest release's page on GitHub."
+          },
+          "checked_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checked At",
+            "description": "When the server last asked."
+          },
+          "check_failed": {
+            "type": "boolean",
+            "title": "Check Failed",
+            "description": "Whether the last attempt failed; the release shown is from an earlier one."
+          }
+        },
+        "type": "object",
+        "required": [
+          "enabled",
+          "repository",
+          "current_version",
+          "latest_version",
+          "latest_published_at",
+          "update_available",
+          "release_url",
+          "checked_at",
+          "check_failed"
+        ],
+        "title": "UpdateStatusResponse",
+        "description": "Whether a newer Orbit release is out. Empty until update checks are turned on."
       },
       "UpdateTaskListRequest": {
         "properties": {
@@ -76497,8 +76891,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 10000000000000,
-                "exclusiveMinimum": 0,
+                "maximum": 10000000000000.0,
+                "exclusiveMinimum": 0.0,
                 "description": "Minor units, always positive: ₹12.50 is 1250."
               },
               {
@@ -76698,14 +77092,14 @@
           },
           "silence_ms": {
             "type": "integer",
-            "maximum": 5000,
-            "minimum": 300,
+            "maximum": 5000.0,
+            "minimum": 300.0,
             "title": "Silence Ms"
           },
           "sensitivity": {
             "type": "integer",
-            "maximum": 10,
-            "minimum": 1,
+            "maximum": 10.0,
+            "minimum": 1.0,
             "title": "Sensitivity"
           },
           "auto_speak": {
@@ -76714,16 +77108,16 @@
           },
           "speaking_rate": {
             "type": "integer",
-            "maximum": 200,
-            "minimum": 50,
+            "maximum": 200.0,
+            "minimum": 50.0,
             "title": "Speaking Rate"
           },
           "history_days": {
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 3650,
-                "minimum": 1
+                "maximum": 3650.0,
+                "minimum": 1.0
               },
               {
                 "type": "null"
@@ -76788,8 +77182,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 2200,
-                "minimum": 1870
+                "maximum": 2200.0,
+                "minimum": 1870.0
               },
               {
                 "type": "null"
@@ -76801,8 +77195,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 6000,
-                "minimum": 1,
+                "maximum": 6000.0,
+                "minimum": 1.0,
                 "description": "Minutes."
               },
               {
@@ -76842,8 +77236,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 10,
-                "minimum": 1,
+                "maximum": 10.0,
+                "minimum": 1.0,
                 "description": "Half stars out of five: 1 to 10."
               },
               {
@@ -78015,8 +78409,8 @@
           },
           "amount_ml": {
             "type": "integer",
-            "maximum": 10000,
-            "minimum": 1,
+            "maximum": 10000.0,
+            "minimum": 1.0,
             "title": "Amount Ml"
           }
         },

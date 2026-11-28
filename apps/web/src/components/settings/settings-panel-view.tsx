@@ -17,6 +17,7 @@ import { PlacesSettings } from "./places-settings";
 import { SavedSettings } from "./saved-settings";
 import { SettingsToneProvider } from "./settings-card";
 import { StorageSettings } from "./storage-settings";
+import { SystemSettings } from "./system-settings";
 import { VoiceSettingsPanel } from "./voice-settings";
 import { WatchlistSettings } from "./watchlist-settings";
 import { WorkspaceSettings } from "./workspace-settings";
@@ -36,6 +37,7 @@ const panelContent: Readonly<Record<string, ReactNode>> = {
   "app-lock": <AppLockSettings />,
   backup: <BackupSettings />,
   storage: <StorageSettings />,
+  system: <SystemSettings />,
 };
 
 export function hasPanelContent(slug: string): boolean {
