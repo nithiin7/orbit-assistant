@@ -35,6 +35,9 @@ export function useModalDialog({
     returnFocusRef.current =
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
     dialog.showModal();
+    // React's `autoFocus` ran while the dialog was still closed, so it did nothing, and
+    // `showModal()` focused the first focusable element instead. Focus the intended field.
+    dialog.querySelector<HTMLElement>("[data-autofocus]")?.focus();
   }, []);
 
   const close = useCallback(() => ref.current?.close(), []);

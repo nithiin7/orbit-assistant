@@ -250,6 +250,7 @@ function CaptureForm({
       <textarea
         id={bodyId}
         autoFocus
+        data-autofocus=""
         value={text}
         rows={6}
         maxLength={20000}
