@@ -319,7 +319,7 @@
           "account"
         ],
         "summary": "Get the signed-in user's profile",
-        "description": "In cloud mode, the first call for a new Supabase user creates the profile and its\nPersonal workspace.",
+        "description": "In cloud mode, the first call for a new Supabase user creates the profile and its\nPersonal workspace. Answered while app lock is locked too: the lock screen greets the\nperson by name.",
         "operationId": "get_profile_api_v1_me_get",
         "responses": {
           "200": {
@@ -711,6 +711,526 @@
           },
           "401": {
             "description": "Not signed in."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/me/app-lock": {
+      "get": {
+        "tags": [
+          "app lock"
+        ],
+        "summary": "Get app lock settings and this session's lock state",
+        "operationId": "get_app_lock_api_v1_me_app_lock_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppLockStatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in, or signed out by app lock."
+          },
+          "423": {
+            "description": "This session is locked."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/me/app-lock/pin": {
+      "put": {
+        "tags": [
+          "app lock"
+        ],
+        "summary": "Turn app lock on with a PIN, or change the PIN",
+        "operationId": "set_app_lock_pin_api_v1_me_app_lock_pin_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetAppLockPinRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppLockStatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in, or signed out by app lock."
+          },
+          "423": {
+            "description": "This session is locked."
+          },
+          "409": {
+            "description": "App lock is off."
+          },
+          "422": {
+            "description": "The PIN is wrong or missing; the detail says how many tries are left."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/me/app-lock/timing": {
+      "put": {
+        "tags": [
+          "app lock"
+        ],
+        "summary": "Choose how soon Orbit locks and signs out when idle",
+        "operationId": "update_app_lock_timing_api_v1_me_app_lock_timing_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppLockTimingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppLockStatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in, or signed out by app lock."
+          },
+          "423": {
+            "description": "This session is locked."
+          },
+          "409": {
+            "description": "App lock is off."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/me/app-lock/disable": {
+      "post": {
+        "tags": [
+          "app lock"
+        ],
+        "summary": "Turn app lock off",
+        "operationId": "disable_app_lock_api_v1_me_app_lock_disable_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DisableAppLockRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppLockStatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in, or signed out by app lock."
+          },
+          "423": {
+            "description": "This session is locked."
+          },
+          "409": {
+            "description": "App lock is off."
+          },
+          "422": {
+            "description": "The PIN is wrong or missing; the detail says how many tries are left."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/me/app-lock/lock": {
+      "post": {
+        "tags": [
+          "app lock"
+        ],
+        "summary": "Lock this session now",
+        "operationId": "lock_app_api_v1_me_app_lock_lock_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppLockStatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in, or signed out by app lock."
+          },
+          "423": {
+            "description": "This session is locked."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/me/app-lock/activity": {
+      "post": {
+        "tags": [
+          "app lock"
+        ],
+        "summary": "Report that the person is using Orbit in this session",
+        "operationId": "record_app_lock_activity_api_v1_me_app_lock_activity_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in, or signed out by app lock."
+          },
+          "423": {
+            "description": "This session is locked."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/me/app-lock/unlock": {
+      "post": {
+        "tags": [
+          "app lock"
+        ],
+        "summary": "Unlock this session with the PIN",
+        "operationId": "unlock_with_pin_api_v1_me_app_lock_unlock_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnlockWithPinRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppLockStatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in, or signed out by app lock."
+          },
+          "423": {
+            "description": "This session is locked."
+          },
+          "409": {
+            "description": "App lock is off."
+          },
+          "422": {
+            "description": "The PIN is wrong or missing; the detail says how many tries are left."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/me/app-lock/devices/options": {
+      "post": {
+        "tags": [
+          "app lock"
+        ],
+        "summary": "Start adding this device's Touch ID or Windows Hello",
+        "operationId": "app_lock_device_options_api_v1_me_app_lock_devices_options_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppLockDeviceOptionsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in, or signed out by app lock."
+          },
+          "423": {
+            "description": "This session is locked."
+          },
+          "409": {
+            "description": "App lock is off, or 10 devices were added already."
+          },
+          "422": {
+            "description": "The device's response didn't verify, or Orbit's address is unknown."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/me/app-lock/devices": {
+      "post": {
+        "tags": [
+          "app lock"
+        ],
+        "summary": "Finish adding this device's Touch ID or Windows Hello",
+        "operationId": "add_app_lock_device_api_v1_me_app_lock_devices_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterAppLockDeviceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppLockStatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in, or signed out by app lock."
+          },
+          "423": {
+            "description": "This session is locked."
+          },
+          "409": {
+            "description": "App lock is off."
+          },
+          "422": {
+            "description": "The device's response didn't verify, or Orbit's address is unknown."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/me/app-lock/devices/{device_id}": {
+      "delete": {
+        "tags": [
+          "app lock"
+        ],
+        "summary": "Stop a device from unlocking Orbit",
+        "operationId": "remove_app_lock_device_api_v1_me_app_lock_devices__device_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "device_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Device Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppLockStatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in, or signed out by app lock."
+          },
+          "423": {
+            "description": "This session is locked."
+          },
+          "404": {
+            "description": "Device not found."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/app-lock/unlock/options": {
+      "post": {
+        "tags": [
+          "app lock"
+        ],
+        "summary": "Start unlocking with Touch ID or Windows Hello",
+        "operationId": "unlock_options_api_v1_me_app_lock_unlock_options_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppLockDeviceOptionsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in, or signed out by app lock."
+          },
+          "423": {
+            "description": "This session is locked."
+          },
+          "409": {
+            "description": "App lock is off."
+          },
+          "422": {
+            "description": "The device's response didn't verify, or Orbit's address is unknown."
+          },
+          "404": {
+            "description": "No device can unlock Orbit at this address."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/me/app-lock/unlock/device": {
+      "post": {
+        "tags": [
+          "app lock"
+        ],
+        "summary": "Unlock this session with Touch ID or Windows Hello",
+        "operationId": "unlock_with_device_api_v1_me_app_lock_unlock_device_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnlockWithDeviceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppLockStatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in, or signed out by app lock."
+          },
+          "423": {
+            "description": "This session is locked."
+          },
+          "409": {
+            "description": "App lock is off."
+          },
+          "422": {
+            "description": "The device's response didn't verify, or Orbit's address is unknown."
           }
         },
         "security": [
@@ -43902,6 +44422,168 @@
         "title": "AiWorkoutSuggestionResponse",
         "description": "A workout draft from the person's own exercises, to save as a template or discard."
       },
+      "AppLockDeviceOptionsResponse": {
+        "properties": {
+          "options": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Options",
+            "description": "WebAuthn options for `navigator.credentials` (binary values in base64url)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "options"
+        ],
+        "title": "AppLockDeviceOptionsResponse"
+      },
+      "AppLockDeviceResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label",
+            "description": "The name given when the device was added."
+          },
+          "credential_id": {
+            "type": "string",
+            "title": "Credential Id",
+            "description": "The authenticator's credential ID (base64url), so a browser can tell whether it is one of its own."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "last_used_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Used At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "credential_id",
+          "created_at",
+          "last_used_at"
+        ],
+        "title": "AppLockDeviceResponse"
+      },
+      "AppLockStatusResponse": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled",
+            "description": "Whether app lock is on for this person."
+          },
+          "locked": {
+            "type": "boolean",
+            "title": "Locked",
+            "description": "Whether this session is locked."
+          },
+          "pin_length": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pin Length",
+            "description": "How many digits the PIN has, when it is on."
+          },
+          "lock_after_minutes": {
+            "type": "integer",
+            "title": "Lock After Minutes",
+            "description": "Idle minutes before the session locks."
+          },
+          "sign_out_after_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sign Out After Minutes",
+            "description": "Idle minutes before the session is signed out; `null` for never."
+          },
+          "attempts_left": {
+            "type": "integer",
+            "title": "Attempts Left",
+            "description": "Wrong PINs this session may enter before sign-out."
+          },
+          "recently_signed_in": {
+            "type": "boolean",
+            "title": "Recently Signed In",
+            "description": "Whether this session signed in moments ago, so it may reset or turn off the lock without the current PIN."
+          },
+          "devices": {
+            "items": {
+              "$ref": "#/components/schemas/AppLockDeviceResponse"
+            },
+            "type": "array",
+            "title": "Devices"
+          }
+        },
+        "type": "object",
+        "required": [
+          "enabled",
+          "locked",
+          "pin_length",
+          "lock_after_minutes",
+          "sign_out_after_minutes",
+          "attempts_left",
+          "recently_signed_in",
+          "devices"
+        ],
+        "title": "AppLockStatusResponse"
+      },
+      "AppLockTimingRequest": {
+        "properties": {
+          "lock_after_minutes": {
+            "type": "integer",
+            "maximum": 1440.0,
+            "minimum": 1.0,
+            "title": "Lock After Minutes"
+          },
+          "sign_out_after_minutes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 43200.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sign Out After Minutes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "lock_after_minutes",
+          "sign_out_after_minutes"
+        ],
+        "title": "AppLockTimingRequest"
+      },
       "ApproveAgentActionRequest": {
         "properties": {
           "arguments_hash": {
@@ -52568,6 +53250,26 @@
         ],
         "title": "DepositValueRequest",
         "description": "Set the deposit's value by hand (it replaces the estimate), or `value: null` to clear."
+      },
+      "DisableAppLockRequest": {
+        "properties": {
+          "current_pin": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]{4,8}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Pin",
+            "description": "Needed unless this session just signed in."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "DisableAppLockRequest"
       },
       "DisconnectIntegrationResponse": {
         "properties": {
@@ -65426,6 +66128,29 @@
         ],
         "title": "RecurringPaymentResponse"
       },
+      "RegisterAppLockDeviceRequest": {
+        "properties": {
+          "credential": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Credential",
+            "description": "The browser's new credential, as JSON."
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Label"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "credential",
+          "label"
+        ],
+        "title": "RegisterAppLockDeviceRequest"
+      },
       "ReminderCommitmentResponse": {
         "properties": {
           "kind": {
@@ -68126,6 +68851,34 @@
           "enabled"
         ],
         "title": "SetAgentWorkflowEnabledRequest"
+      },
+      "SetAppLockPinRequest": {
+        "properties": {
+          "pin": {
+            "type": "string",
+            "pattern": "^[0-9]{4,8}$",
+            "title": "Pin"
+          },
+          "current_pin": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]{4,8}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Pin",
+            "description": "Needed to change an existing PIN, unless this session just signed in."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "pin"
+        ],
+        "title": "SetAppLockPinRequest"
       },
       "SetHabitRemindersRequest": {
         "properties": {
@@ -71486,6 +72239,37 @@
           "unavailable"
         ],
         "title": "UniversalSearchResponse"
+      },
+      "UnlockWithDeviceRequest": {
+        "properties": {
+          "credential": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Credential",
+            "description": "The browser's assertion, as JSON."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "credential"
+        ],
+        "title": "UnlockWithDeviceRequest"
+      },
+      "UnlockWithPinRequest": {
+        "properties": {
+          "pin": {
+            "type": "string",
+            "pattern": "^[0-9]{4,8}$",
+            "title": "Pin"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "pin"
+        ],
+        "title": "UnlockWithPinRequest"
       },
       "UnreadCountResponse": {
         "properties": {

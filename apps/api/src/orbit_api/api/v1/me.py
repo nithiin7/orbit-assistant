@@ -5,7 +5,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request, Response, status
 
-from orbit_api.api.auth import CurrentUserDep
+from orbit_api.api.auth import CallerDep, CurrentUserDep
 from orbit_api.api.dependencies import (
     AccountServiceDep,
     AvatarServiceDep,
@@ -30,10 +30,11 @@ _IMAGE_CONTENT: dict[str, Any] = {
 
 
 @router.get("", summary="Get the signed-in user's profile")
-async def get_profile(user: CurrentUserDep) -> UserProfile:
+async def get_profile(caller: CallerDep) -> UserProfile:
     """In cloud mode, the first call for a new Supabase user creates the profile and its
-    Personal workspace."""
-    return UserProfile.of(user)
+    Personal workspace. Answered while app lock is locked too: the lock screen greets the
+    person by name."""
+    return UserProfile.of(caller.user)
 
 
 @router.patch("", summary="Update the signed-in user's profile")

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { AchievementWatcher } from "@/components/achievements/achievement-watcher";
+import { AppLockGate } from "@/components/app-lock/app-lock-gate";
 import { AppShell } from "@/components/app-shell/app-shell";
 import { RequireAuth } from "@/components/auth/require-auth";
 import { FocusTimer } from "@/components/focus/focus-timer";
@@ -12,26 +13,28 @@ import { ToastProvider } from "@/providers/toast";
 import { WorkspaceProvider } from "@/providers/workspace";
 
 /**
- * Every route in this group requires a signed-in user and has an active workspace. A new user
- * goes to the setup guide first. Achievements are checked as they use the app; toasts (such as Undo) and the focus timer show above every page.
+ * Every route in this group requires a signed-in user and has an active workspace. App lock, when
+ * on, replaces it all with the lock screen. A new user goes to the setup guide first. Achievements are checked as they use the app; toasts (such as Undo) and the focus timer show above every page.
  */
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
     <RequireAuth>
-      <SetupRedirect>
-        <AvatarProvider>
-          <WorkspaceProvider>
-            <ToastProvider>
-              <FocusProvider>
-                <AppShell>{children}</AppShell>
-                <FocusTimer />
-              </FocusProvider>
-              <Toaster />
-            </ToastProvider>
-            <AchievementWatcher />
-          </WorkspaceProvider>
-        </AvatarProvider>
-      </SetupRedirect>
+      <AppLockGate>
+        <SetupRedirect>
+          <AvatarProvider>
+            <WorkspaceProvider>
+              <ToastProvider>
+                <FocusProvider>
+                  <AppShell>{children}</AppShell>
+                  <FocusTimer />
+                </FocusProvider>
+                <Toaster />
+              </ToastProvider>
+              <AchievementWatcher />
+            </WorkspaceProvider>
+          </AvatarProvider>
+        </SetupRedirect>
+      </AppLockGate>
     </RequireAuth>
   );
 }

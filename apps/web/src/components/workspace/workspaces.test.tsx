@@ -23,7 +23,21 @@ const session = {
   "GET /api/v1/auth/config": json({ provider: "local", registration_open: false }),
   "GET /api/v1/me": json(ada),
   "GET /api/v1/me/avatar": status(204),
+  "GET /api/v1/me/app-lock": json(lockStatus(false)),
 };
+
+function lockStatus(enabled: boolean) {
+  return {
+    enabled,
+    locked: false,
+    pin_length: enabled ? 4 : null,
+    lock_after_minutes: 5,
+    sign_out_after_minutes: null,
+    attempts_left: 5,
+    recently_signed_in: false,
+    devices: [],
+  };
+}
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -157,6 +171,36 @@ describe("WorkspaceSwitcher", () => {
       "http://localhost:8000/api/v1/auth/local/sign-out",
       expect.anything(),
     );
+  });
+
+  it("locks from the menu when app lock is on", async () => {
+    const user = userEvent.setup();
+    const lock = vi.fn(() => Response.json({ ...lockStatus(true), locked: true }));
+    mockApi({
+      ...session,
+      "GET /api/v1/workspaces": json({ workspaces: [personal] }),
+      "GET /api/v1/me/app-lock": json(lockStatus(true)),
+      "POST /api/v1/me/app-lock/lock": lock,
+    });
+    await renderSignedIn(<WorkspaceSwitcher />);
+
+    await user.click(await screen.findByRole("button", { name: /Workspace: Personal/ }));
+    const item = await screen.findByRole("menuitem", { name: "Lock now" });
+    expect(item).toHaveAttribute("aria-keyshortcuts", "Control+Shift+L");
+    await user.click(item);
+
+    await waitFor(() => expect(lock).toHaveBeenCalled());
+  });
+
+  it("leaves Lock now out when app lock is off", async () => {
+    const user = userEvent.setup();
+    mockApi({ ...session, "GET /api/v1/workspaces": json({ workspaces: [personal] }) });
+    await renderSignedIn(<WorkspaceSwitcher />);
+
+    await user.click(await screen.findByRole("button", { name: /Workspace: Personal/ }));
+
+    expect(screen.getByRole("menuitem", { name: "Sign out" })).toBeInTheDocument();
+    expect(screen.queryByRole("menuitem", { name: "Lock now" })).not.toBeInTheDocument();
   });
 
   it("offers a retry when workspaces can't be loaded", async () => {

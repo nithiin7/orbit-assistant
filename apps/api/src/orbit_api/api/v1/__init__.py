@@ -6,6 +6,7 @@ from orbit_api.api.v1 import (
     achievements,
     agent,
     ai,
+    app_lock,
     auth,
     backups,
     bookmarks,
@@ -46,6 +47,7 @@ router = APIRouter(prefix="/api/v1")
 router.include_router(health.router)
 router.include_router(auth.router)
 router.include_router(me.router)
+router.include_router(app_lock.router)
 router.include_router(achievements.router)
 router.include_router(notifications.router)
 router.include_router(workspaces.router)

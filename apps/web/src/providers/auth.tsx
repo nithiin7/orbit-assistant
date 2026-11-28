@@ -38,8 +38,14 @@ type AuthContextValue = {
   requestPasswordReset: (email: string) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
   retry: () => void;
-  /** Run an API call with the current token. A 401 response signs the user out. */
+  /**
+   * Run an API call with the current token. A 401 response signs the user out; a 423 means app
+   * lock locked this session, and sets `appLocked`.
+   */
   withToken: <T>(call: (token: string) => Promise<T>) => Promise<T>;
+  /** Whether the API reported this session locked. The lock screen clears it once unlocked. */
+  appLocked: boolean;
+  setAppLocked: (locked: boolean) => void;
   /** Replace the signed-in user's profile after the API confirmed a change. */
   setUser: (user: UserProfile) => void;
 };
@@ -71,6 +77,7 @@ const notSignedIn = () => new ApiError(401, "", "Sign in to continue.");
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
+  const [appLocked, setAppLocked] = useState(false);
   const clientRef = useRef<AuthClient | null>(null);
   const configRef = useRef<AuthConfig | null>(null);
   // Each session check takes a number; only the latest may update state, so a slow, stale
@@ -80,6 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signedOut = useCallback(() => {
     generation.current += 1;
     const config = configRef.current;
+    setAppLocked(false);
     setState(config ? { status: "signed-out", config } : { status: "loading" });
   }, []);
 
@@ -206,6 +214,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           await client.discardSession();
           signedOut();
         }
+        if (error instanceof ApiError && error.status === 423) setAppLocked(true);
         throw error;
       }
     },
@@ -227,6 +236,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       retry,
       withToken,
       setUser,
+      appLocked,
+      setAppLocked,
     }),
     [
       state,
@@ -238,6 +249,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       retry,
       withToken,
       setUser,
+      appLocked,
     ],
   );
 

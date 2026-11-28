@@ -191,7 +191,8 @@ export interface paths {
         /**
          * Get the signed-in user's profile
          * @description In cloud mode, the first call for a new Supabase user creates the profile and its
-         *     Personal workspace.
+         *     Personal workspace. Answered while app lock is locked too: the lock screen greets the
+         *     person by name.
          */
         get: operations["get_profile_api_v1_me_get"];
         put?: never;
@@ -266,6 +267,210 @@ export interface paths {
         post?: never;
         /** Reset the signed-in user's dashboard to the default layout */
         delete: operations["delete_dashboard_api_v1_me_dashboard_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/app-lock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get app lock settings and this session's lock state */
+        get: operations["get_app_lock_api_v1_me_app_lock_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/app-lock/pin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Turn app lock on with a PIN, or change the PIN */
+        put: operations["set_app_lock_pin_api_v1_me_app_lock_pin_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/app-lock/timing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Choose how soon Orbit locks and signs out when idle */
+        put: operations["update_app_lock_timing_api_v1_me_app_lock_timing_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/app-lock/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Turn app lock off */
+        post: operations["disable_app_lock_api_v1_me_app_lock_disable_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/app-lock/lock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Lock this session now */
+        post: operations["lock_app_api_v1_me_app_lock_lock_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/app-lock/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Report that the person is using Orbit in this session */
+        post: operations["record_app_lock_activity_api_v1_me_app_lock_activity_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/app-lock/unlock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Unlock this session with the PIN */
+        post: operations["unlock_with_pin_api_v1_me_app_lock_unlock_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/app-lock/devices/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start adding this device's Touch ID or Windows Hello */
+        post: operations["app_lock_device_options_api_v1_me_app_lock_devices_options_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/app-lock/devices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Finish adding this device's Touch ID or Windows Hello */
+        post: operations["add_app_lock_device_api_v1_me_app_lock_devices_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/app-lock/devices/{device_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Stop a device from unlocking Orbit */
+        delete: operations["remove_app_lock_device_api_v1_me_app_lock_devices__device_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/app-lock/unlock/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start unlocking with Touch ID or Windows Hello */
+        post: operations["unlock_options_api_v1_me_app_lock_unlock_options_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/app-lock/unlock/device": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Unlock this session with Touch ID or Windows Hello */
+        post: operations["unlock_with_device_api_v1_me_app_lock_unlock_device_post"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -9404,6 +9609,88 @@ export interface components {
              */
             processing: "local" | "cloud";
         };
+        /** AppLockDeviceOptionsResponse */
+        AppLockDeviceOptionsResponse: {
+            /**
+             * Options
+             * @description WebAuthn options for `navigator.credentials` (binary values in base64url).
+             */
+            options: {
+                [key: string]: unknown;
+            };
+        };
+        /** AppLockDeviceResponse */
+        AppLockDeviceResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Label
+             * @description The name given when the device was added.
+             */
+            label: string;
+            /**
+             * Credential Id
+             * @description The authenticator's credential ID (base64url), so a browser can tell whether it is one of its own.
+             */
+            credential_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Last Used At */
+            last_used_at: string | null;
+        };
+        /** AppLockStatusResponse */
+        AppLockStatusResponse: {
+            /**
+             * Enabled
+             * @description Whether app lock is on for this person.
+             */
+            enabled: boolean;
+            /**
+             * Locked
+             * @description Whether this session is locked.
+             */
+            locked: boolean;
+            /**
+             * Pin Length
+             * @description How many digits the PIN has, when it is on.
+             */
+            pin_length: number | null;
+            /**
+             * Lock After Minutes
+             * @description Idle minutes before the session locks.
+             */
+            lock_after_minutes: number;
+            /**
+             * Sign Out After Minutes
+             * @description Idle minutes before the session is signed out; `null` for never.
+             */
+            sign_out_after_minutes: number | null;
+            /**
+             * Attempts Left
+             * @description Wrong PINs this session may enter before sign-out.
+             */
+            attempts_left: number;
+            /**
+             * Recently Signed In
+             * @description Whether this session signed in moments ago, so it may reset or turn off the lock without the current PIN.
+             */
+            recently_signed_in: boolean;
+            /** Devices */
+            devices: components["schemas"]["AppLockDeviceResponse"][];
+        };
+        /** AppLockTimingRequest */
+        AppLockTimingRequest: {
+            /** Lock After Minutes */
+            lock_after_minutes: number;
+            /** Sign Out After Minutes */
+            sign_out_after_minutes: number | null;
+        };
         /** ApproveAgentActionRequest */
         ApproveAgentActionRequest: {
             /** Arguments Hash */
@@ -13082,6 +13369,14 @@ export interface components {
             value: number | null;
             /** Valued On */
             valued_on?: string | null;
+        };
+        /** DisableAppLockRequest */
+        DisableAppLockRequest: {
+            /**
+             * Current Pin
+             * @description Needed unless this session just signed in.
+             */
+            current_pin?: string | null;
         };
         /** DisconnectIntegrationResponse */
         DisconnectIntegrationResponse: {
@@ -18518,6 +18813,18 @@ export interface components {
              */
             updated_at: string;
         };
+        /** RegisterAppLockDeviceRequest */
+        RegisterAppLockDeviceRequest: {
+            /**
+             * Credential
+             * @description The browser's new credential, as JSON.
+             */
+            credential: {
+                [key: string]: unknown;
+            };
+            /** Label */
+            label: string;
+        };
         /** ReminderCommitmentResponse */
         ReminderCommitmentResponse: {
             /**
@@ -19478,6 +19785,16 @@ export interface components {
         SetAgentWorkflowEnabledRequest: {
             /** Enabled */
             enabled: boolean;
+        };
+        /** SetAppLockPinRequest */
+        SetAppLockPinRequest: {
+            /** Pin */
+            pin: string;
+            /**
+             * Current Pin
+             * @description Needed to change an existing PIN, unless this session just signed in.
+             */
+            current_pin?: string | null;
         };
         /** SetHabitRemindersRequest */
         SetHabitRemindersRequest: {
@@ -20833,6 +21150,21 @@ export interface components {
              * @description Modules that couldn't be searched.
              */
             unavailable: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places" | "people")[];
+        };
+        /** UnlockWithDeviceRequest */
+        UnlockWithDeviceRequest: {
+            /**
+             * Credential
+             * @description The browser's assertion, as JSON.
+             */
+            credential: {
+                [key: string]: unknown;
+            };
+        };
+        /** UnlockWithPinRequest */
+        UnlockWithPinRequest: {
+            /** Pin */
+            pin: string;
         };
         /** UnreadCountResponse */
         UnreadCountResponse: {
@@ -23049,6 +23381,575 @@ export interface operations {
             };
             /** @description Not signed in. */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_app_lock_api_v1_me_app_lock_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppLockStatusResponse"];
+                };
+            };
+            /** @description Not signed in, or signed out by app lock. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description This session is locked. */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    set_app_lock_pin_api_v1_me_app_lock_pin_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetAppLockPinRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppLockStatusResponse"];
+                };
+            };
+            /** @description Not signed in, or signed out by app lock. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description App lock is off. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The PIN is wrong or missing; the detail says how many tries are left. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description This session is locked. */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update_app_lock_timing_api_v1_me_app_lock_timing_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AppLockTimingRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppLockStatusResponse"];
+                };
+            };
+            /** @description Not signed in, or signed out by app lock. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description App lock is off. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description This session is locked. */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    disable_app_lock_api_v1_me_app_lock_disable_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DisableAppLockRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppLockStatusResponse"];
+                };
+            };
+            /** @description Not signed in, or signed out by app lock. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description App lock is off. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The PIN is wrong or missing; the detail says how many tries are left. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description This session is locked. */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    lock_app_api_v1_me_app_lock_lock_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppLockStatusResponse"];
+                };
+            };
+            /** @description Not signed in, or signed out by app lock. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description This session is locked. */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    record_app_lock_activity_api_v1_me_app_lock_activity_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in, or signed out by app lock. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description This session is locked. */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    unlock_with_pin_api_v1_me_app_lock_unlock_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UnlockWithPinRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppLockStatusResponse"];
+                };
+            };
+            /** @description Not signed in, or signed out by app lock. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description App lock is off. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The PIN is wrong or missing; the detail says how many tries are left. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description This session is locked. */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    app_lock_device_options_api_v1_me_app_lock_devices_options_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppLockDeviceOptionsResponse"];
+                };
+            };
+            /** @description Not signed in, or signed out by app lock. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description App lock is off, or 10 devices were added already. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The device's response didn't verify, or Orbit's address is unknown. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description This session is locked. */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    add_app_lock_device_api_v1_me_app_lock_devices_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterAppLockDeviceRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppLockStatusResponse"];
+                };
+            };
+            /** @description Not signed in, or signed out by app lock. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description App lock is off. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The device's response didn't verify, or Orbit's address is unknown. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description This session is locked. */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    remove_app_lock_device_api_v1_me_app_lock_devices__device_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                device_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppLockStatusResponse"];
+                };
+            };
+            /** @description Not signed in, or signed out by app lock. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Device not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description This session is locked. */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    unlock_options_api_v1_me_app_lock_unlock_options_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppLockDeviceOptionsResponse"];
+                };
+            };
+            /** @description Not signed in, or signed out by app lock. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No device can unlock Orbit at this address. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description App lock is off. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The device's response didn't verify, or Orbit's address is unknown. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description This session is locked. */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    unlock_with_device_api_v1_me_app_lock_unlock_device_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UnlockWithDeviceRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppLockStatusResponse"];
+                };
+            };
+            /** @description Not signed in, or signed out by app lock. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description App lock is off. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The device's response didn't verify, or Orbit's address is unknown. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description This session is locked. */
+            423: {
                 headers: {
                     [name: string]: unknown;
                 };

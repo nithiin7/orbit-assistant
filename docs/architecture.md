@@ -380,6 +380,41 @@ Rules live in `api/auth.py` and `services/workspaces/service.py`:
 - **Route protection is browser-side** (`RequireAuth`) because the Next.js server can't see
   tokens; it's a UX guard, since pages hold no private data and the API validates every request.
 
+### App lock
+
+Optional, per person: after an idle time they choose, a session must be unlocked with a PIN, or
+Touch ID or Windows Hello on a device set up for it. The API enforces it; the browser only
+reports activity and shows the lock screen.
+
+- **Tables:** `app_lock_settings` (Argon2id PIN hash and length, lock and sign-out delays; the
+  lock is on exactly when the row exists), `app_lock_credentials` (WebAuthn public keys, with the
+  host name they belong to), `app_lock_sessions` (per sign-in session, keyed by a SHA-256 digest:
+  of the local token, or of Supabase's `session_id` claim, which survives refreshes; without one,
+  per person). None are in backups.
+- **Enforcement** (`api/auth.py`): `get_caller` authenticates, then asks `AppLockService.check`.
+  A session idle past the lock delay (plus 20 s grace) or locked on purpose gets **423** from
+  every `CurrentUserDep` route; past the optional sign-out delay, or after 5 wrong PINs, it gets
+  **401** for good. `CallerDep` routes still answer a locked session: `GET /me` (the lock screen
+  greets by name), local sign-out, and `/me/app-lock` status, lock, and unlock. A session seen
+  for the first time starts unlocked: it just signed in with a password, or the lock was just
+  turned on.
+- **Activity:** the web reports input (not background refetches) with `POST /me/app-lock/activity`
+  at most every 15 s, shares the last input time across tabs in `localStorage`, and announces
+  lock and unlock so every tab follows. A closed or sleeping browser comes back locked.
+- **Changing or removing the PIN** needs the current one, except within 10 minutes of a password
+  sign-in (local session `created_at`; Supabase `amr` timestamps). That is the "forgot my PIN"
+  path: sign out, sign in, choose a new PIN.
+- **WebAuthn** (`auth/webauthn.py`, py_webauthn): platform authenticators only, user
+  verification required, no attestation. The relying party is the request's `Origin`, which must
+  be one of `ORBIT_CORS_ORIGINS`; WebAuthn needs HTTPS or `localhost`. Challenges are stored on
+  the session row, expire after 2 minutes, and are used once. The browser remembers which
+  credentials it made (`orbit:app-lock:own-devices`) and offers device unlock only for those.
+- **Web:** `AppLockGate` sits inside `RequireAuth` in the app and setup layouts. Locked, it
+  unmounts the app, removes every cached query except the lock state, and shows `LockScreen`
+  (PIN pad with typing, paste, and a shake on a wrong PIN; device unlock offered once on focus).
+  "Lock now" is in the account menu and on Cmd+Shift+L (Ctrl+Shift+L elsewhere), both only
+  with the lock on.
+
 ### Workspace selection
 
 - Active workspace per user in `localStorage` `orbit:workspace:<user id>`; a selector, never a
