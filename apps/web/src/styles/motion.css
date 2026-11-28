@@ -24,6 +24,46 @@
   --animate-spin-slow: spin-slow 9s linear infinite;
   --animate-drift: drift 16s ease-in-out infinite alternate;
   --animate-shine: shine 3.2s ease-in-out infinite;
+  /* App lock: a wrong PIN shakes, each entered digit pops in, and unlocking lifts the screen. */
+  --animate-pin-shake: pin-shake 420ms var(--ease-out-soft);
+  --animate-pin-pop: pin-pop 220ms var(--ease-spring);
+  --animate-unlock-out: unlock-out 380ms var(--ease-out-soft) forwards;
+  --animate-lock-in: lock-in 320ms var(--ease-out-soft);
+
+  @keyframes pin-shake {
+    15%,
+    55% {
+      translate: -9px 0;
+    }
+    35%,
+    75% {
+      translate: 9px 0;
+    }
+    90% {
+      translate: -3px 0;
+    }
+  }
+
+  @keyframes pin-pop {
+    from {
+      scale: 0.4;
+    }
+  }
+
+  @keyframes unlock-out {
+    to {
+      opacity: 0;
+      scale: 1.04;
+      filter: blur(6px);
+    }
+  }
+
+  @keyframes lock-in {
+    from {
+      opacity: 0;
+      scale: 0.98;
+    }
+  }
 
   @keyframes spin-slow {
     to {

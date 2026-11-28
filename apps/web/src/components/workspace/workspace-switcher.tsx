@@ -4,6 +4,7 @@ import {
   Check,
   ChevronsUpDown,
   Layers,
+  LockKeyhole,
   LogOut,
   Moon,
   PanelLeft,
@@ -25,12 +26,15 @@ import {
 } from "react";
 
 import { UserAvatar } from "@/components/avatar/user-avatar";
+import { Kbd } from "@/components/ui/kbd";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip } from "@/components/ui/tooltip";
+import { LOCK_SHORTCUT_KEY, useLockNow } from "@/hooks/use-app-lock";
 import { workspaceInitial } from "@/lib/workspaces";
 import { useAuth, useCurrentUser } from "@/providers/auth";
 import { useWorkspaces } from "@/providers/workspace";
 import { cn } from "@/utils/common";
+import { isMacPlatform, modShiftKeyLabel, modShiftKeyShortcut } from "@/utils/keyboard";
 
 const itemClassName =
   "flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-sm outline-none hover:bg-accent focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring";
@@ -52,6 +56,7 @@ type WorkspaceSwitcherProps = {
 export function WorkspaceSwitcher({ collapsible = false, onNavigate }: WorkspaceSwitcherProps) {
   const { state, switchWorkspace, refresh } = useWorkspaces();
   const { signOut } = useAuth();
+  const lockNow = useLockNow();
   const user = useCurrentUser();
   const { resolvedTheme, setTheme } = useTheme();
   const [position, setPosition] = useState<CSSProperties | null>(null);
@@ -309,6 +314,14 @@ export function WorkspaceSwitcher({ collapsible = false, onNavigate }: Workspace
             {resolvedTheme === "dark" ? "Light mode" : "Dark mode"}
           </button>
           <div role="separator" className="-mx-1 my-1 h-px bg-border" />
+          {lockNow ? (
+            <LockNowItem
+              onLock={() => {
+                close(false);
+                lockNow();
+              }}
+            />
+          ) : null}
           <button
             type="button"
             role="menuitem"
@@ -343,5 +356,24 @@ export function WorkspaceAvatar({ name, small = false }: { name: string; small?:
     >
       {workspaceInitial(name)}
     </span>
+  );
+}
+
+/** Locks Orbit at once; shown only with app lock on. Also Cmd+Shift+L (Ctrl+Shift+L). */
+function LockNowItem({ onLock }: { onLock: () => void }) {
+  const mac = isMacPlatform(navigator.userAgent);
+  return (
+    <button
+      type="button"
+      role="menuitem"
+      tabIndex={-1}
+      aria-keyshortcuts={modShiftKeyShortcut(LOCK_SHORTCUT_KEY, mac)}
+      onClick={onLock}
+      className={itemClassName}
+    >
+      <LockKeyhole className="size-4 text-muted-foreground" aria-hidden="true" />
+      <span className="flex-1">Lock now</span>
+      <Kbd aria-hidden="true">{modShiftKeyLabel(LOCK_SHORTCUT_KEY, mac)}</Kbd>
+    </button>
   );
 }

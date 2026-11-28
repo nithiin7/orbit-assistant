@@ -8,6 +8,7 @@ import {
   Database,
   Layers,
   LineChart,
+  LockKeyhole,
   type LucideIcon,
   MapPinned,
   Palette,
@@ -146,6 +147,15 @@ export const settingsPanels: readonly SettingsPanel[] = [
     tone: "brand",
     section: "assistant",
     keywords: ["speech", "microphone", "language"],
+  },
+  {
+    slug: "app-lock",
+    title: "App lock",
+    description: "A PIN, Touch ID, or Windows Hello after Orbit sits idle.",
+    icon: LockKeyhole,
+    tone: "violet",
+    section: "data",
+    keywords: ["security", "pin", "passcode", "touch id", "fingerprint", "windows hello", "idle"],
   },
   {
     slug: "backup",
