@@ -12,10 +12,12 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { todayIn } from "@/lib/calendar";
 import { hourIn } from "@/lib/dashboard";
 import { mealAt, STARTER_TEMPLATES } from "@/lib/fitness";
 import { ada, json, mockApi, personal, status } from "@/test/api-mock";
 import { renderSignedIn } from "@/test/session";
+import { addDays } from "@/utils/dates";
 
 import { EventWorkout } from "./event-workout";
 import { HealthPanel } from "./health-view";
@@ -156,6 +158,8 @@ function session(units: Partial<FitnessProfile> = {}) {
     [`GET ${WS}/exercises`]: json({ exercises: [] }),
     [`GET ${WS}/sessions/active`]: json({ session: null }),
     [`GET ${WS}/foods`]: json({ foods: [] }),
+    [`GET ${WS}/nutrition/history`]: json({ days: [] }),
+    [`GET ${WS}/water/history`]: json({ days: [] }),
   };
 }
 
@@ -230,6 +234,45 @@ describe("HealthPanel: overview", () => {
       "aria-valuetext",
       expect.stringMatching(/^750 ml of /),
     );
+  });
+
+  it("charts food and water over the last seven days", async () => {
+    // The person is in UTC, so Health's today is the UTC date.
+    const today = todayIn("UTC");
+    const nutrients = { protein_mg: 0, carbs_mg: 0, fat_mg: 0, fiber_mg: null };
+    mockApi({
+      ...session(),
+      [`GET ${WS}/overview`]: json(overview()),
+      [`GET ${WS}/nutrition/history`]: json({
+        days: [
+          {
+            day: addDays(today, -1),
+            nutrients: { ...nutrients, energy_cal: 2_000_000 },
+            entries: 3,
+          },
+          { day: today, nutrients: { ...nutrients, energy_cal: 1_000_000 }, entries: 1 },
+        ],
+      }),
+      [`GET ${WS}/water/history`]: json({ days: [{ day: today, total_ml: 1500 }] }),
+    });
+    await renderSignedIn(<HealthPanel />);
+    const card = await screen.findByRole("region", { name: "Last 7 days" });
+    expect(
+      await within(card).findByRole("table", { name: "Energy, last 7 days" }),
+    ).toBeInTheDocument();
+    expect(within(card).getAllByRole("row")).toHaveLength(14);
+    expect(within(card).getByText(/1,500 kcal a day on average/)).toBeInTheDocument();
+    expect(within(card).getByText(/1,500 ml a day on average/)).toBeInTheDocument();
+  });
+
+  it("leaves the week chart out when food and water are hidden", async () => {
+    mockApi({
+      ...session(),
+      [`GET ${WS}/overview`]: json(overview({ hidden_sections: ["nutrition", "water"] })),
+    });
+    await renderSignedIn(<HealthPanel />);
+    expect(await screen.findByRole("heading", { name: "Weight" })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Last 7 days" })).not.toBeInTheDocument();
   });
 
   it("leaves out the sections the person hid", async () => {
