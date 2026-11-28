@@ -5,6 +5,15 @@ All notable changes to Orbit are recorded here. Orbit uses
 [Release workflow](.github/workflows/release.yml) from the Conventional Commit messages since
 the previous release.
 
+## [1.2.0](https://github.com/nithiin7/orbit-assistant/compare/v1.1.0...v1.2.0) (2026-11-28)
+
+
+### Features
+
+* add a system status page and opt-in update notices ([6fd33a4](https://github.com/nithiin7/orbit-assistant/commit/6fd33a4a5988e971541369a6481c87ec7c923505))
+* **api:** add system status and opt-in update checks ([f283f10](https://github.com/nithiin7/orbit-assistant/commit/f283f10fb849f3adf59c38ddf6b286d9abfe662f))
+* **web:** add the System settings panel with update notices ([e15a948](https://github.com/nithiin7/orbit-assistant/commit/e15a94822697eaf57ea4d4d7fae16080ed4f11fc))
+
 ## [1.1.0](https://github.com/nithiin7/orbit-assistant/compare/v1.0.0...v1.1.0) (2026-11-28)
 
 
