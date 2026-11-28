@@ -16,6 +16,7 @@ from anyio import to_thread
 from orbit_api.services.accounts.models import User
 from orbit_api.services.accounts.service import AccountRepository, AccountService
 from orbit_api.services.local_auth.models import (
+    ActiveSession,
     EmailAlreadyRegisteredError,
     InvalidCredentialsError,
     LocalCredential,
@@ -52,8 +53,8 @@ class LocalAuthRepository(Protocol):
         self, user_id: uuid.UUID, token_hash: str, created_at: datetime, expires_at: datetime
     ) -> None: ...
 
-    async def find_session_user(self, token_hash: str, now: datetime) -> User | None:
-        """The user of an unexpired session with this token digest."""
+    async def find_session(self, token_hash: str, now: datetime) -> ActiveSession | None:
+        """The unexpired session with this token digest."""
         ...
 
     async def delete_session(self, token_hash: str) -> None: ...
@@ -132,11 +133,9 @@ class LocalAuthService:
         await self._transaction.commit()
         return session
 
-    async def authenticate(self, token: str) -> User | None:
-        """The user of a valid, unexpired session token, or `None`."""
-        return await self._credentials.find_session_user(
-            hash_session_token(token), datetime.now(UTC)
-        )
+    async def authenticate(self, token: str) -> ActiveSession | None:
+        """The valid, unexpired session with this token, or `None`."""
+        return await self._credentials.find_session(hash_session_token(token), datetime.now(UTC))
 
     async def change_password(
         self, *, user: User, token: str, current_password: str, new_password: str

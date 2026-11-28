@@ -9,6 +9,7 @@ database engine.
 import time
 import uuid
 from collections.abc import Iterator
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -125,6 +126,21 @@ class TestVerifier:
     def test_rejects_invalid_claims(self, overrides: dict[str, Any]) -> None:
         with pytest.raises(InvalidAccessTokenError):
             verifier().verify(mint(**overrides))
+
+    def test_reads_the_sign_in_session_and_time(self) -> None:
+        identity = verifier().verify(
+            mint(
+                session_id="9f1c5b7e-session",
+                amr=[{"method": "password", "timestamp": 1_700_000_000}, {"method": "otp"}],
+            )
+        )
+
+        assert identity.session_id == "9f1c5b7e-session"
+        assert identity.authenticated_at == datetime.fromtimestamp(1_700_000_000, UTC)
+
+    @pytest.mark.parametrize("amr", [None, "password", [{"timestamp": "soon"}], [True]])
+    def test_ignores_malformed_sign_in_methods(self, amr: Any) -> None:
+        assert verifier().verify(mint(amr=amr)).authenticated_at is None
 
     def test_rejects_tokens_signed_with_another_key(self) -> None:
         other = ec.generate_private_key(ec.SECP256R1())
@@ -254,3 +270,20 @@ def test_cloud_config_exposes_only_public_supabase_settings(tmp_path: Path) -> N
         "supabase_publishable_key": "sb_publishable_test",
     }
     assert "hunter2" not in response.text
+
+
+def test_app_lock_follows_the_supabase_session_across_token_refreshes(client: TestClient) -> None:
+    subject = str(uuid.uuid4())
+    first = bearer(mint(subject, session_id="session-one", iat=int(time.time()) - 5))
+    refreshed = bearer(mint(subject, session_id="session-one"))
+    other_device = bearer(mint(subject, session_id="session-two"))
+    lock = "/api/v1/me/app-lock"
+    assert client.put(f"{lock}/pin", json={"pin": "2468"}, headers=first).status_code == 200
+
+    client.post(f"{lock}/lock", headers=first)
+
+    assert client.get("/api/v1/workspaces", headers=refreshed).status_code == 423
+    assert client.get("/api/v1/workspaces", headers=other_device).status_code == 200
+    unlocked = client.post(f"{lock}/unlock", json={"pin": "2468"}, headers=refreshed)
+    assert unlocked.status_code == 200
+    assert client.get("/api/v1/workspaces", headers=first).status_code == 200

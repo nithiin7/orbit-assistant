@@ -865,6 +865,17 @@ export type VoiceConfirmationOutcome = VoiceConfirmation["outcome"];
 export type VoiceHistoryClear = Schemas["VoiceHistoryClearResponse"];
 export type AiInputMode = AiMessage["input_mode"];
 
+// App lock
+export type AppLockStatus = Schemas["AppLockStatusResponse"];
+export type AppLockDevice = Schemas["AppLockDeviceResponse"];
+export type AppLockDeviceOptions = Schemas["AppLockDeviceOptionsResponse"];
+export type AppLockTimingRequest = Schemas["AppLockTimingRequest"];
+export type SetAppLockPinRequest = Schemas["SetAppLockPinRequest"];
+export type DisableAppLockRequest = Schemas["DisableAppLockRequest"];
+export type UnlockWithPinRequest = Schemas["UnlockWithPinRequest"];
+export type RegisterAppLockDeviceRequest = Schemas["RegisterAppLockDeviceRequest"];
+export type UnlockWithDeviceRequest = Schemas["UnlockWithDeviceRequest"];
+
 // Push notifications
 export type PushStatus = Schemas["PushStatusResponse"];
 export type UpdatePushPreferencesRequest = Schemas["UpdatePushPreferencesRequest"];

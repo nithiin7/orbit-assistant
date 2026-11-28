@@ -9,6 +9,7 @@ import { type SettingsPanel, settingsSectionLabel } from "@/lib/settings";
 
 import { AccountSettings } from "./account-settings";
 import { AiSettingsPanel } from "./ai-settings";
+import { AppLockSettings } from "./app-lock-settings";
 import { AppearanceSettings } from "./appearance-settings";
 import { FinanceSettings } from "./finance-settings";
 import { NotificationSettings } from "./notification-settings";
@@ -32,6 +33,7 @@ const panelContent: Readonly<Record<string, ReactNode>> = {
   notifications: <NotificationSettings />,
   voice: <VoiceSettingsPanel />,
   integrations: <IntegrationsSettings />,
+  "app-lock": <AppLockSettings />,
   backup: <BackupSettings />,
   storage: <StorageSettings />,
 };

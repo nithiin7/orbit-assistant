@@ -25,6 +25,11 @@ from orbit_api.db.models.ai import (
     AiSettingsModel,
     AiUsageModel,
 )
+from orbit_api.db.models.app_lock import (
+    AppLockCredentialModel,
+    AppLockSessionModel,
+    AppLockSettingsModel,
+)
 from orbit_api.db.models.avatars import UserAvatarModel, UserCoverModel
 from orbit_api.db.models.backup import BackupModel, BackupSettingsModel, BackupUploadModel
 from orbit_api.db.models.bookmarks import (
@@ -174,6 +179,9 @@ __all__ = [
     "AiProviderModel",
     "AiSettingsModel",
     "AiUsageModel",
+    "AppLockCredentialModel",
+    "AppLockSessionModel",
+    "AppLockSettingsModel",
     "BackupModel",
     "BackupSettingsModel",
     "BackupUploadModel",

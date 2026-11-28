@@ -18,6 +18,16 @@ export function modKeyLabel(key: string, isMac: boolean): string {
   return isMac ? `⌘${key.toUpperCase()}` : `Ctrl+${key.toUpperCase()}`;
 }
 
+/** The `aria-keyshortcuts` value for a mod + Shift shortcut, e.g. "Meta+Shift+L". */
+export function modShiftKeyShortcut(key: string, isMac: boolean | null): string {
+  return `${isMac ? "Meta" : "Control"}+Shift+${key.toUpperCase()}`;
+}
+
+/** A short visible label for a mod + Shift shortcut, e.g. "⌘⇧L" or "Ctrl+Shift+L". */
+export function modShiftKeyLabel(key: string, isMac: boolean): string {
+  return isMac ? `⌘⇧${key.toUpperCase()}` : `Ctrl+Shift+${key.toUpperCase()}`;
+}
+
 /** True when the event comes from a field where the user is typing text. */
 export function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;

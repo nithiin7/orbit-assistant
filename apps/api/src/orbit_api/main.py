@@ -19,6 +19,7 @@ from orbit_api.api.auth import Authenticator, LocalAuthenticator, SupabaseAuthen
 from orbit_api.api.v1 import router as v1_router
 from orbit_api.auth.passwords import Argon2PasswordHasher
 from orbit_api.auth.supabase import SupabaseTokenVerifier
+from orbit_api.auth.webauthn import WebAuthnDevices
 from orbit_api.config import Settings, get_settings
 from orbit_api.db.database import open_database
 from orbit_api.observability import RequestContextMiddleware
@@ -115,6 +116,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.settings = settings
     app.state.authenticator = _create_authenticator(settings)
     app.state.password_hasher = Argon2PasswordHasher()
+    app.state.device_authenticator = WebAuthnDevices()
     app.state.sign_in_throttle = SignInThrottle()
     app.state.file_revealer = SystemFileRevealer()
     # One HTTP client for every AI provider call; tests replace the factory with fakes.

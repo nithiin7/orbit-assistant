@@ -22,6 +22,14 @@ class LocalSession:
     user: User
 
 
+@dataclass(frozen=True, slots=True)
+class ActiveSession:
+    """A valid session's user, and when it was signed in."""
+
+    user: User
+    started_at: datetime
+
+
 class RegistrationClosedError(Exception):
     """This installation does not accept new local accounts."""
 
